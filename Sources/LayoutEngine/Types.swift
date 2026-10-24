@@ -17,6 +17,7 @@ public enum Command: Equatable, Sendable {
     case focusLeft, focusRight, focusUp, focusDown
     case cycleWidth, toggleFullWidth, centerColumn
     case stackLeft, unstack
+    case moveColumnLeft, moveColumnRight
 }
 
 public enum WidthPreset {

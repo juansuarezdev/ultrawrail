@@ -107,6 +107,47 @@ final class WorkspaceTests: XCTestCase {
         XCTAssertTrue(ws.columns.isEmpty)
     }
 
+    func testMoveColumnRightSwapsWithNeighbourAndFocusFollows() {
+        var ws = makeWorkspace(3)
+        ws.apply(.focusLeft)
+        ws.apply(.focusLeft)
+        ws.apply(.moveColumnRight)
+        XCTAssertEqual(ws.columns.map(\.windows), [[2], [1], [3]])
+        XCTAssertEqual(ws.focusedColumn, 1)
+        XCTAssertEqual(ws.focusedWindow, 1)
+    }
+
+    func testMoveColumnLeftSwapsWithNeighbourAndFocusFollows() {
+        var ws = makeWorkspace(3)
+        ws.apply(.moveColumnLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [3], [2]])
+        XCTAssertEqual(ws.focusedColumn, 1)
+        XCTAssertEqual(ws.focusedWindow, 3)
+    }
+
+    func testMoveColumnKeepsWidthsAndStacksWithTheColumn() {
+        var ws = makeWorkspace(3)
+        ws.apply(.stackLeft)            // [[1], [2, 3]], focus on 3
+        ws.apply(.cycleWidth)
+        let width = ws.columns[1].width
+        ws.apply(.moveColumnLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[2, 3], [1]])
+        XCTAssertEqual(ws.columns[0].width, width)
+        XCTAssertEqual(ws.focusedColumn, 0)
+        XCTAssertEqual(ws.focusedWindow, 3)
+    }
+
+    func testMoveColumnAtEdgeIsNoOp() {
+        var ws = makeWorkspace(3)
+        ws.apply(.moveColumnRight)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2], [3]])
+        ws.apply(.focusLeft)
+        ws.apply(.focusLeft)
+        ws.apply(.moveColumnLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2], [3]])
+        XCTAssertEqual(ws.focusedColumn, 0)
+    }
+
     func testStackLeftMovesFocusedWindowIntoLeftColumn() {
         var ws = makeWorkspace(3)
         ws.apply(.stackLeft)

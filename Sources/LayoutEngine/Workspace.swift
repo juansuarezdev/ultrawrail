@@ -83,6 +83,10 @@ public struct Workspace: Equatable, Sendable {
             stackLeft()
         case .unstack:
             unstack()
+        case .moveColumnLeft:
+            moveColumn(by: -1)
+        case .moveColumnRight:
+            moveColumn(by: 1)
         case .centerColumn:
             break
         }
@@ -95,6 +99,13 @@ public struct Workspace: Equatable, Sendable {
         focusedColumn -= 1
         columns[focusedColumn].windows.append(id)
         focusedRow = columns[focusedColumn].windows.count - 1
+    }
+
+    private mutating func moveColumn(by delta: Int) {
+        let target = focusedColumn + delta
+        guard columns.indices.contains(target) else { return }
+        columns.swapAt(focusedColumn, target)
+        focusedColumn = target
     }
 
     private mutating func unstack() {

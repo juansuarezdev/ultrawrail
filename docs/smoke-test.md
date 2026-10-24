@@ -11,6 +11,7 @@ Cubre lo que los tests unitarios no pueden: Accessibility y atajos reales.
 6. ⌃⌥R: el ancho de la columna enfocada cicla 50 → 66 → 75 → 25 → 33 → 50 %.
 7. ⌃⌥F: ancho completo; otra vez, vuelve al anterior.
 8. ⌃⌥C: la columna enfocada queda centrada.
+   - ⌃⌥⇧H / ⌃⌥⇧L (o ⌃⌥⇧←/→): la columna enfocada se intercambia con su vecina y mantiene el foco.
 9. ⌃⌥[ : la ventana enfocada se apila en la columna de su izquierda; ⌃⌥J / ⌃⌥K cambian de ventana en la pila; ⌃⌥] la saca a su propia columna.
 10. Cierra una ventana: las demás se recolocan. Abre un diálogo (⌘O en TextEdit): flota y no entra en la tira.
 11. Bloquea la pantalla y desbloquea: el layout se mantiene.

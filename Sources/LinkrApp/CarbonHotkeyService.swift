@@ -34,6 +34,7 @@ final class CarbonHotkeyService: HotkeyService {
         let name: String
         let keyCode: Int
         let command: Command
+        var shift = false
     }
 
     private static let bindings: [Binding] = [
@@ -50,6 +51,10 @@ final class CarbonHotkeyService: HotkeyService {
         Binding(name: "⌃⌥C", keyCode: kVK_ANSI_C, command: .centerColumn),
         Binding(name: "⌃⌥[", keyCode: kVK_ANSI_LeftBracket, command: .stackLeft),
         Binding(name: "⌃⌥]", keyCode: kVK_ANSI_RightBracket, command: .unstack),
+        Binding(name: "⌃⌥⇧H", keyCode: kVK_ANSI_H, command: .moveColumnLeft, shift: true),
+        Binding(name: "⌃⌥⇧←", keyCode: kVK_LeftArrow, command: .moveColumnLeft, shift: true),
+        Binding(name: "⌃⌥⇧L", keyCode: kVK_ANSI_L, command: .moveColumnRight, shift: true),
+        Binding(name: "⌃⌥⇧→", keyCode: kVK_RightArrow, command: .moveColumnRight, shift: true),
     ]
 
     private var refs: [EventHotKeyRef] = []
@@ -62,7 +67,7 @@ final class CarbonHotkeyService: HotkeyService {
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
                 UInt32(binding.keyCode),
-                UInt32(controlKey | optionKey),
+                UInt32(controlKey | optionKey | (binding.shift ? shiftKey : 0)),
                 EventHotKeyID(signature: hotkeySignature, id: UInt32(index)),
                 GetApplicationEventTarget(),
                 0,
