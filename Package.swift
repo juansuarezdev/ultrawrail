@@ -6,6 +6,12 @@ let package = Package(
     platforms: [.macOS(.v13)],
     targets: [
         .target(name: "LayoutEngine"),
+        .target(name: "LinkrCore", dependencies: ["LayoutEngine"]),
         .testTarget(name: "LayoutEngineTests", dependencies: ["LayoutEngine"]),
+        .testTarget(
+            name: "LinkrCoreTests",
+            dependencies: ["LinkrCore", "LayoutEngine"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
     ]
 )

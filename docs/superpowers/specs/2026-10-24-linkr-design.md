@@ -36,10 +36,11 @@ Fuera (versiones posteriores): animación, gestos de trackpad, indicador de tira
 Package.swift
 Sources/
   LayoutEngine/     librería pura, sin AppKit ni Accessibility
+  LinkrCore/        protocolos WindowService/HotkeyService y Controller
   LinkrApp/         ejecutable: Accessibility, atajos, barra de menús
 Tests/
   LayoutEngineTests/
-  LinkrAppTests/    Controller con WindowService falso
+  LinkrCoreTests/   Controller con WindowService falso
 scripts/
   bundle.sh         genera y firma el .app
 ```
