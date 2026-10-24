@@ -106,4 +106,16 @@ final class LayoutTests: XCTestCase {
         ws.perform(.toggleFullWidth, viewport: viewport, config: config)
         XCTAssertEqual(ws.scrollOffset, 510)
     }
+
+    func testStripRectsUseStripCoordinatesAndViewportRelativeY() {
+        let rects = Layout.stripRects(makeWorkspace(3), viewport: viewport, config: config)
+        XCTAssertEqual(rects[1], CGRect(x: 10, y: 10, width: 490, height: 780))
+        XCTAssertEqual(rects[2], CGRect(x: 510, y: 10, width: 490, height: 780))
+        XCTAssertEqual(rects[3], CGRect(x: 1010, y: 10, width: 490, height: 780))
+    }
+
+    func testStripWidthCoversAllColumnsPlusOuterGap() {
+        XCTAssertEqual(Layout.stripWidth(makeWorkspace(3), viewport: viewport, config: config), 1510)
+        XCTAssertEqual(Layout.stripWidth(Workspace(), viewport: viewport, config: config), 0)
+    }
 }
