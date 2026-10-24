@@ -51,4 +51,32 @@ public struct Workspace: Equatable, Sendable {
         focusedColumn = c
         focusedRow = r
     }
+
+    /// Pure model mutation. `centerColumn` is a no-op here: centering needs the
+    /// viewport and is handled by `perform(_:viewport:config:)`.
+    public mutating func apply(_ command: Command) {
+        guard !columns.isEmpty else { return }
+        switch command {
+        case .focusLeft:
+            focusedColumn = max(0, focusedColumn - 1)
+            focusedRow = min(focusedRow, columns[focusedColumn].windows.count - 1)
+        case .focusRight:
+            focusedColumn = min(columns.count - 1, focusedColumn + 1)
+            focusedRow = min(focusedRow, columns[focusedColumn].windows.count - 1)
+        case .cycleWidth:
+            let current = columns[focusedColumn].width
+            columns[focusedColumn].width = WidthPreset.all.first { $0 > current + 0.001 } ?? WidthPreset.all[0]
+            columns[focusedColumn].restoreWidth = nil
+        case .toggleFullWidth:
+            if columns[focusedColumn].width >= 1.0 {
+                columns[focusedColumn].width = columns[focusedColumn].restoreWidth ?? WidthPreset.defaultWidth
+                columns[focusedColumn].restoreWidth = nil
+            } else {
+                columns[focusedColumn].restoreWidth = columns[focusedColumn].width
+                columns[focusedColumn].width = 1.0
+            }
+        case .focusUp, .focusDown, .centerColumn, .stackLeft, .unstack:
+            break
+        }
+    }
 }

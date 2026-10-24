@@ -69,4 +69,41 @@ final class WorkspaceTests: XCTestCase {
         ws.removeWindow(99)
         XCTAssertEqual(ws.allWindows, [1, 2])
     }
+
+    func testFocusLeftAndRightClampAtEdges() {
+        var ws = makeWorkspace(3)
+        ws.apply(.focusRight)
+        XCTAssertEqual(ws.focusedWindow, 3)
+        ws.apply(.focusLeft)
+        ws.apply(.focusLeft)
+        XCTAssertEqual(ws.focusedWindow, 1)
+        ws.apply(.focusLeft)
+        XCTAssertEqual(ws.focusedWindow, 1)
+    }
+
+    func testCycleWidthWalksPresetsAndWraps() {
+        var ws = makeWorkspace(1)
+        var seen: [Double] = []
+        for _ in 0..<5 {
+            ws.apply(.cycleWidth)
+            seen.append(ws.columns[0].width)
+        }
+        XCTAssertEqual(seen, [0.66, 0.75, 0.25, 0.33, 0.5])
+    }
+
+    func testToggleFullWidthRestoresPreviousWidth() {
+        var ws = makeWorkspace(1)
+        ws.apply(.cycleWidth)
+        ws.apply(.toggleFullWidth)
+        XCTAssertEqual(ws.columns[0].width, 1.0)
+        ws.apply(.toggleFullWidth)
+        XCTAssertEqual(ws.columns[0].width, 0.66)
+    }
+
+    func testApplyOnEmptyWorkspaceIsNoOp() {
+        var ws = Workspace()
+        ws.apply(.focusRight)
+        ws.apply(.cycleWidth)
+        XCTAssertTrue(ws.columns.isEmpty)
+    }
 }
