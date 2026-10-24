@@ -23,9 +23,11 @@ final class FakeWindows: WindowService {
     func usableFrame() -> CGRect { frame }
     func setFrame(_ rect: CGRect, for id: WindowID) -> Bool {
         setFrameCalls.append((id, rect))
+        onSetFrame?()
         return !failing.contains(id)
     }
     var echoFocus = false
+    var onSetFrame: (() -> Void)?
     func focus(_ id: WindowID) {
         focusCalls.append(id)
         if echoFocus { onEvent?(.focused(id)) }
