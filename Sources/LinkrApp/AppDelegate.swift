@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: Controller
 
     private func startController() {
+        guard controller == nil else { return }
         let controller = Controller(windows: AXWindowService(), hotkeys: CarbonHotkeyService())
         controller.start()
         self.controller = controller

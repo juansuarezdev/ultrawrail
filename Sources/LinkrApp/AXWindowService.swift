@@ -21,6 +21,7 @@ final class AXWindowService: WindowService {
     private struct Entry {
         let element: AXUIElement
         let pid: pid_t
+        var adopted: Bool
     }
 
     private var entries: [WindowID: Entry] = [:]
@@ -31,6 +32,8 @@ final class AXWindowService: WindowService {
     // MARK: WindowService
 
     func start() {
+        // Window elements inherit the system-wide timeout, so a hung app cannot block the main thread for long.
+        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.3)
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: .main) { [weak self] note in
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
@@ -75,13 +78,16 @@ final class AXWindowService: WindowService {
         AXUIElementPerformAction(entry.element, kAXRaiseAction as CFString)
         let appElement = AXUIElementCreateApplication(entry.pid)
         AXUIElementSetAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, entry.element)
+        AXUIElementSetAttributeValue(appElement, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
+        AXUIElementSetAttributeValue(entry.element, kAXMainAttribute as CFString, kCFBooleanTrue)
         NSRunningApplication(processIdentifier: entry.pid)?.activate()
     }
 
     func isAlive(_ id: WindowID) -> Bool {
         guard let entry = entries[id] else { return false }
         var value: CFTypeRef?
-        return AXUIElementCopyAttributeValue(entry.element, kAXRoleAttribute as CFString, &value) == .success
+        // Only a destroyed element means dead; a hung app (.cannotComplete) keeps its windows.
+        return AXUIElementCopyAttributeValue(entry.element, kAXRoleAttribute as CFString, &value) != .invalidUIElement
     }
 
     // MARK: Observation
@@ -98,6 +104,7 @@ final class AXWindowService: WindowService {
         let refcon = Unmanaged.passUnretained(self).toOpaque()
         AXObserverAddNotification(observer, appElement, kAXWindowCreatedNotification as CFString, refcon)
         AXObserverAddNotification(observer, appElement, kAXFocusedWindowChangedNotification as CFString, refcon)
+        AXObserverAddNotification(observer, appElement, kAXApplicationActivatedNotification as CFString, refcon)
         CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
         observers[pid] = observer
 
@@ -118,35 +125,56 @@ final class AXWindowService: WindowService {
 
     func handle(_ element: AXUIElement, _ notification: String) {
         var pid: pid_t = 0
-        AXUIElementGetPid(element, &pid)
+        guard AXUIElementGetPid(element, &pid) == .success else { return }
         switch notification {
         case kAXWindowCreatedNotification:
             _ = register(element, pid: pid, emit: true)
         case kAXFocusedWindowChangedNotification:
-            if let id = id(of: element) {
-                onEvent?(.focused(id))
-            } else {
-                let id = register(element, pid: pid, emit: true)
-                onEvent?(.focused(id))
+            windowFocused(element, pid: pid)
+        case kAXApplicationActivatedNotification:
+            if let focused: AXUIElement = attribute(element, kAXFocusedWindowAttribute) {
+                windowFocused(focused, pid: pid)
             }
         case kAXUIElementDestroyedNotification:
             if let id = id(of: element) {
                 entries[id] = nil
                 onEvent?(.closed(id))
             }
+        case kAXWindowMiniaturizedNotification:
+            // Keep the entry: the window comes back on deminiaturize.
+            if let id = id(of: element) { onEvent?(.closed(id)) }
+        case kAXWindowDeminiaturizedNotification:
+            if let id = id(of: element), let info = info(for: id) { onEvent?(.opened(info)) }
         default:
             break
         }
+    }
+
+    private func windowFocused(_ element: AXUIElement, pid: pid_t) {
+        guard let id = id(of: element) else {
+            let id = register(element, pid: pid, emit: true)
+            onEvent?(.focused(id))
+            return
+        }
+        // Manageability is only checked at registration; retry for windows that were not ready then.
+        if var entry = entries[id], !entry.adopted, isManageable(entry.element) {
+            entry.adopted = true
+            entries[id] = entry
+            if let info = info(for: id) { onEvent?(.opened(info)) }
+        }
+        onEvent?(.focused(id))
     }
 
     private func register(_ element: AXUIElement, pid: pid_t, emit: Bool) -> WindowID {
         if let existing = id(of: element) { return existing }
         let id = WindowID(nextID)
         nextID += 1
-        entries[id] = Entry(element: element, pid: pid)
+        entries[id] = Entry(element: element, pid: pid, adopted: isManageable(element))
         if let observer = observers[pid] {
             let refcon = Unmanaged.passUnretained(self).toOpaque()
             AXObserverAddNotification(observer, element, kAXUIElementDestroyedNotification as CFString, refcon)
+            AXObserverAddNotification(observer, element, kAXWindowMiniaturizedNotification as CFString, refcon)
+            AXObserverAddNotification(observer, element, kAXWindowDeminiaturizedNotification as CFString, refcon)
         }
         if emit, let info = info(for: id) { onEvent?(.opened(info)) }
         return id
