@@ -56,7 +56,10 @@ final class TemplateBoardView: NSView {
     }
 
     private func chipRect(inList index: Int) -> NSRect {
-        NSRect(x: listArea.minX, y: listArea.minY + CGFloat(index) * 40, width: listArea.width, height: 34)
+        // Chips shrink their pitch so a long window list still fits inside the list area.
+        let count = board.windows.count
+        let pitch = count > 1 ? min(40, (listArea.height - 34) / CGFloat(count - 1)) : 40
+        return NSRect(x: listArea.minX, y: listArea.minY + CGFloat(index) * pitch, width: listArea.width, height: 34)
     }
 
     private func listChips() -> [WindowID] { board.windows }
@@ -170,6 +173,7 @@ final class TemplateBoardView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        dragCandidate = nil
         let point = convert(event.locationInWindow, from: nil)
         for (index, template) in Template.all.enumerated() where cardRect(index).contains(point) {
             board.select(template)

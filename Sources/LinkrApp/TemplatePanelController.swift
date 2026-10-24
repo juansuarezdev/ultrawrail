@@ -52,6 +52,7 @@ final class TemplatePanelController: NSObject {
                             backing: .buffered, defer: false)
         panel.title = "Plantillas"
         panel.level = .floating
+        panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.contentView = content
         panel.center()
