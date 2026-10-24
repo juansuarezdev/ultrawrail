@@ -33,7 +33,10 @@ Pasos adicionales:
 5. Menú > "Velocidad de animación": con "Rápida" el deslizamiento es más corto; con "Desactivada" las ventanas saltan, pero la previsualización sigue animándose.
 6. Activa Ajustes del Sistema > Accesibilidad > Pantalla > "Reducir movimiento": con "Respetar Reducir movimiento del sistema" marcado, todo salta. Desmárcalo y vuelve a animarse.
 7. Cambia el ancho con ⌃⌥R: la ventana enfocada cambia de ancho al instante (no se anima).
-8. Abre una app pesada (por ejemplo un navegador con varias pestañas) junto a TextEdit y repite el paso 2: si se ven tirones, anótalo; el salto automático por frame lento debe evitar que se quede a medias.
+8. Con el menú abierto y otra app enfocada, los atajos ⌃⌥H / ⌃⌥L siguen funcionando y el menú no se cierra al cambiar el foco.
+9. El menú abre sin retraso perceptible.
+10. Abre el menú, ciérralo y mira la CPU de Linkr en el Monitor de Actividad: debe quedar en reposo (el temporizador de la previsualización se detiene al cerrar el menú).
+11. Abre una app pesada (por ejemplo un navegador con varias pestañas) junto a TextEdit y repite el paso 2: si se ven tirones, anótalo; el salto automático por frame lento debe evitar que se quede a medias.
 
 ## Limitaciones conocidas
 
