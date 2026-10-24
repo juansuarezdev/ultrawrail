@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
     private let settingsStore = MotionSettingsStore()
+    private let keyboardStore = KeyboardStyleStore()
     private var controller: Controller?
     private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
@@ -150,6 +151,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(reduce)
         }
 
+        let legendItem = NSMenuItem(title: "Atajos de teclado", action: nil, keyEquivalent: "")
+        let legendMenu = NSMenu()
+        let style = keyboardStore.style
+        for (option, title) in [(KeyboardStyle.windows, "Teclado Windows"), (.mac, "Teclado Mac")] {
+            let item = NSMenuItem(title: title, action: #selector(selectKeyboardStyle(_:)), keyEquivalent: "")
+            item.representedObject = option.rawValue
+            item.state = style == option ? .on : .off
+            item.target = self
+            legendMenu.addItem(item)
+        }
+        legendMenu.addItem(.separator())
+        for entry in ShortcutLegend.entries {
+            let line = NSMenuItem(title: ShortcutLegend.line(for: entry, style: style), action: nil, keyEquivalent: "")
+            line.isEnabled = false
+            legendMenu.addItem(line)
+        }
+        legendItem.submenu = legendMenu
+        menu.addItem(legendItem)
+
         let login = NSMenuItem(title: "Iniciar al arrancar", action: #selector(toggleLogin), keyEquivalent: "")
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         login.target = self
@@ -182,6 +202,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var settings = settingsStore.settings
         settings.speed = speed
         apply(settings)
+    }
+
+    @objc private func selectKeyboardStyle(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let style = KeyboardStyle(rawValue: raw) else { return }
+        keyboardStore.style = style
+        rebuildMenu()
     }
 
     @objc private func toggleReduceMotion() {

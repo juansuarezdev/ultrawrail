@@ -49,6 +49,11 @@ Pasos adicionales:
 6. Con más ventanas que huecos, las sobrantes quedan como columnas a la derecha y ninguna desaparece.
 7. El panel se ve bien en modo claro y oscuro.
 
+## Leyenda de atajos
+
+1. El menú tiene "Atajos de teclado" con un submenú: "Teclado Windows" (por defecto) y "Teclado Mac", con la elegida marcada, y debajo los 12 atajos (Ctrl+Alt+... o ⌃⌥...).
+2. Cambiar de teclado cambia el texto de todas las líneas y se recuerda al reabrir la app.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
