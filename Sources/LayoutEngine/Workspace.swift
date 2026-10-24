@@ -52,6 +52,34 @@ public struct Workspace: Equatable, Sendable {
         focusedRow = r
     }
 
+    /// Rebuilds the strip from a template. `assignment` has one entry per slot, column by column.
+    /// Windows that are not assigned (or whose entry is nil, repeated or unknown) go to extra
+    /// default-width columns at the end, so no window is lost.
+    public mutating func apply(_ template: Template, assignment: [WindowID?]) {
+        let existing = allWindows
+        let focused = focusedWindow
+        var used = Set<WindowID>()
+        var rebuilt: [Column] = []
+        var slot = 0
+        for spec in template.columns {
+            var windows: [WindowID] = []
+            for _ in 0..<spec.slots {
+                if slot < assignment.count, let id = assignment[slot],
+                   existing.contains(id), used.insert(id).inserted {
+                    windows.append(id)
+                }
+                slot += 1
+            }
+            if !windows.isEmpty { rebuilt.append(Column(windows: windows, width: spec.width)) }
+        }
+        for id in existing where !used.contains(id) { rebuilt.append(Column(windows: [id])) }
+        columns = rebuilt
+        scrollOffset = 0
+        focusedColumn = 0
+        focusedRow = 0
+        if let focused { focus(window: focused) }
+    }
+
     /// Pure model mutation. `centerColumn` is a no-op here: centering needs the
     /// viewport and is handled by `perform(_:viewport:config:)`.
     public mutating func apply(_ command: Command) {

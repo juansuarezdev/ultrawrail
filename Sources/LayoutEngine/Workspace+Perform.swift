@@ -11,4 +11,11 @@ public extension Workspace {
             Layout.removeOverscroll(&self, viewport: viewport, config: config)
         }
     }
+
+    /// Applies a template and leaves `scrollOffset` consistent with the focused column.
+    mutating func apply(_ template: Template, assignment: [WindowID?], viewport: CGRect, config: LayoutConfig) {
+        apply(template, assignment: assignment)
+        Layout.reveal(&self, viewport: viewport, config: config)
+        Layout.removeOverscroll(&self, viewport: viewport, config: config)
+    }
 }
