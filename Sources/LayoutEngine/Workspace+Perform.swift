@@ -8,6 +8,7 @@ public extension Workspace {
             Layout.center(&self, viewport: viewport, config: config)
         } else {
             Layout.reveal(&self, viewport: viewport, config: config)
+            Layout.removeOverscroll(&self, viewport: viewport, config: config)
         }
     }
 }

@@ -25,8 +25,15 @@ final class FakeWindows: WindowService {
         setFrameCalls.append((id, rect))
         return !failing.contains(id)
     }
-    func focus(_ id: WindowID) { focusCalls.append(id) }
+    var echoFocus = false
+    func focus(_ id: WindowID) {
+        focusCalls.append(id)
+        if echoFocus { onEvent?(.focused(id)) }
+    }
     func isAlive(_ id: WindowID) -> Bool { alive.contains(id) }
+    func writes(_ id: Int) -> Int {
+        setFrameCalls.filter { $0.id == WindowID(id) }.count
+    }
     func lastRect(_ id: Int) -> CGRect? {
         setFrameCalls.last { $0.id == WindowID(id) }?.rect
     }
@@ -72,9 +79,46 @@ final class ControllerTests: XCTestCase {
 
     func testUnchangedLayoutIsNotRewritten() {
         let (controller, windows) = makeController([1, 2, 3])
+        let before1 = windows.writes(1), before2 = windows.writes(2), before3 = windows.writes(3)
+        controller.handle(.focused(2))
+        // Focusing 2 scrolls the strip by 10 px: 2 and 3 move once, parked 1 does not change.
+        XCTAssertEqual(windows.writes(1), before1)
+        XCTAssertEqual(windows.writes(2) - before2, 1)
+        XCTAssertEqual(windows.writes(3) - before3, 1)
+    }
+
+    func testFocusedEventRewritesThatWindowSoManualMovesSnapBack() {
+        let (controller, windows) = makeController([1, 2, 3])
+        let before = windows.writes(2)
+        controller.handle(.focused(2))
+        XCTAssertEqual(windows.writes(2), before + 1)
+    }
+
+    func testOpenedUnmanageableWindowIsIgnored() {
+        let (controller, windows) = makeController([1, 2])
         let before = windows.setFrameCalls.count
-        controller.handle(.focused(3))
+        windows.alive.insert(9)
+        controller.handle(.opened(WindowInfo(id: 9, isManageable: false)))
+        XCTAssertEqual(controller.workspace.allWindows, [1, 2])
         XCTAssertEqual(windows.setFrameCalls.count, before)
+    }
+
+    func testFocusedUnknownWindowIsIgnored() {
+        let (controller, windows) = makeController([1, 2])
+        let before = windows.setFrameCalls.count
+        controller.handle(.focused(42))
+        XCTAssertEqual(controller.workspace.focusedWindow, 2)
+        XCTAssertEqual(windows.setFrameCalls.count, before)
+    }
+
+    func testSynchronousFocusEchoCausesNoLoopAndNoExtraWrites() {
+        let (controller, windows) = makeController([1, 2, 3])
+        windows.echoFocus = true
+        let before = windows.setFrameCalls.count
+        controller.handle(.focusLeft)
+        XCTAssertEqual(windows.focusCalls, [2])
+        // Windows 2 and 3 move once; the echoed focus event rewrites 2 once more.
+        XCTAssertEqual(windows.setFrameCalls.count - before, 3)
     }
 
     func testFocusedEventUpdatesModelWithoutRefocusing() {
@@ -97,8 +141,8 @@ final class ControllerTests: XCTestCase {
         let (controller, windows) = makeController([1, 2, 3])
         controller.handle(.closed(2))
         XCTAssertEqual(controller.workspace.allWindows, [1, 3])
-        XCTAssertEqual(windows.lastRect(1), CGRect(x: -489, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 10, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(1), CGRect(x: 0, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 500, y: 10, width: 490, height: 780))
     }
 
     func testDeadWindowIsRemovedOnRelayout() {

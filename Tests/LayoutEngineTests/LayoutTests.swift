@@ -79,4 +79,31 @@ final class LayoutTests: XCTestCase {
         ws.perform(.centerColumn, viewport: viewport, config: config)
         XCTAssertEqual(ws.scrollOffset, -245)
     }
+
+    func testRemoveOverscrollLowersScrollWhenStripEndsBeforeViewportEdge() {
+        var ws = makeWorkspace(2)
+        ws.scrollOffset = 510
+        Layout.removeOverscroll(&ws, viewport: viewport, config: config)
+        XCTAssertEqual(ws.scrollOffset, 10)
+    }
+
+    func testRemoveOverscrollKeepsNegativeAndFittingScroll() {
+        var ws = makeWorkspace(1)
+        ws.scrollOffset = -245
+        Layout.removeOverscroll(&ws, viewport: viewport, config: config)
+        XCTAssertEqual(ws.scrollOffset, -245)
+        ws = makeWorkspace(3)
+        Layout.reveal(&ws, viewport: viewport, config: config)
+        Layout.removeOverscroll(&ws, viewport: viewport, config: config)
+        XCTAssertEqual(ws.scrollOffset, 510)
+    }
+
+    func testPerformShrinkingLastColumnLowersScroll() {
+        var ws = makeWorkspace(3)
+        ws.perform(.focusRight, viewport: viewport, config: config)
+        ws.perform(.toggleFullWidth, viewport: viewport, config: config)
+        XCTAssertEqual(ws.scrollOffset, 1000)
+        ws.perform(.toggleFullWidth, viewport: viewport, config: config)
+        XCTAssertEqual(ws.scrollOffset, 510)
+    }
 }

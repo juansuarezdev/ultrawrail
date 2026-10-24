@@ -26,6 +26,14 @@ public enum Layout {
         }
     }
 
+    /// Lowers scroll when the strip ends before the viewport's right edge, so
+    /// no blank space is left after columns shrink or close. Never raises it.
+    public static func removeOverscroll(_ ws: inout Workspace, viewport: CGRect, config: LayoutConfig) {
+        guard !ws.columns.isEmpty, ws.scrollOffset > 0 else { return }
+        let stripWidth = stripX(of: ws.columns.count, in: ws, viewport: viewport, config: config) - config.gap + config.outerGap
+        ws.scrollOffset = max(0, min(ws.scrollOffset, stripWidth - viewport.width))
+    }
+
     public static func center(_ ws: inout Workspace, viewport: CGRect, config: LayoutConfig) {
         guard ws.columns.indices.contains(ws.focusedColumn) else { return }
         let left = stripX(of: ws.focusedColumn, in: ws, viewport: viewport, config: config)

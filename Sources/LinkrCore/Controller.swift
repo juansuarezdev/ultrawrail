@@ -9,6 +9,7 @@ public final class Controller {
     private let windows: WindowService
     private let hotkeys: HotkeyService
     private let config: LayoutConfig
+    private var needsClamp = false
     private var lastApplied: [WindowID: CGRect] = [:]
     private var failures: [WindowID: Int] = [:]
     private static let maxFailures = 3
@@ -45,6 +46,7 @@ public final class Controller {
         case .focused(let id):
             guard workspace.contains(id) else { return }
             workspace.focus(window: id)
+            lastApplied[id] = nil
             relayout()
         }
     }
@@ -59,6 +61,10 @@ public final class Controller {
         let viewport = windows.usableFrame()
         for id in workspace.allWindows where !windows.isAlive(id) { forget(id) }
         Layout.reveal(&workspace, viewport: viewport, config: config)
+        if needsClamp {
+            Layout.removeOverscroll(&workspace, viewport: viewport, config: config)
+            needsClamp = false
+        }
 
         var dropped = false
         let frames = Layout.frames(workspace, viewport: viewport, config: config)
@@ -87,5 +93,6 @@ public final class Controller {
         workspace.removeWindow(id)
         lastApplied[id] = nil
         failures[id] = nil
+        needsClamp = true
     }
 }
