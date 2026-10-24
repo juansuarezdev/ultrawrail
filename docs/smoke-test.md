@@ -24,6 +24,17 @@ Pasos adicionales:
 14. ⌘M sobre una columna: las demás se recolocan. Restáurala desde el Dock: vuelve a la tira.
 15. Con tres ventanas de medio ancho, cierra la del medio: no debe quedar la mitad derecha en blanco.
 
+## Animación y previsualización
+
+1. Abre el menú de Linkr. Arriba debe verse la tira dibujada, con el marco de pantalla y la barra de posición debajo, y la línea "Activo · N columnas · M ventanas".
+2. Con tres ventanas de TextEdit, pulsa ⌃⌥H / ⌃⌥L: las ventanas se deslizan en ~0,18 s en vez de saltar. No deben quedar a medio camino ni parpadear.
+3. Abre el menú y, con él abierto, pulsa ⌃⌥H / ⌃⌥L: el marco y la barra de la previsualización se mueven con suavidad.
+4. Cierra el menú, cambia el foco varias veces y ábrelo: la previsualización ya muestra el estado actual, sin animar.
+5. Menú > "Velocidad de animación": con "Rápida" el deslizamiento es más corto; con "Desactivada" las ventanas saltan, pero la previsualización sigue animándose.
+6. Activa Ajustes del Sistema > Accesibilidad > Pantalla > "Reducir movimiento": con "Respetar Reducir movimiento del sistema" marcado, todo salta. Desmárcalo y vuelve a animarse.
+7. Cambia el ancho con ⌃⌥R: la ventana enfocada cambia de ancho al instante (no se anima).
+8. Abre una app pesada (por ejemplo un navegador con varias pestañas) junto a TextEdit y repite el paso 2: si se ven tirones, anótalo; el salto automático por frame lento debe evitar que se quede a medias.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

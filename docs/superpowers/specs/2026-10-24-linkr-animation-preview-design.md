@@ -63,7 +63,7 @@ Fuera: animar cambios de ancho y pilas, clics en el preview, animación en panta
 - Velocidad: Rápida (120 ms), Normal (180 ms, por defecto), Desactivada. Clave `UserDefaults`: `motionSpeed`.
 - "Respetar Reducir movimiento del sistema": activado por defecto. Clave: `respectReduceMotion`.
 - Ambos aparecen en el menú, debajo de la línea de estado y encima de "Iniciar al arrancar".
-- Durante el desarrollo, hasta el paso 4 del orden de construcción, la velocidad por defecto es "Desactivada" para no cambiar el comportamiento ya probado.
+- La velocidad por defecto de `MotionSettings()` en `LinkrCore` es "Desactivada", para que las pruebas del `Controller` sin animador no cambien. El guardado de ajustes de la app usa "Normal" como valor por defecto desde el principio.
 
 ## Pruebas
 
