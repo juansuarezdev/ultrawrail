@@ -121,9 +121,33 @@ final class ControllerAnimationTests: XCTestCase {
         controller.handle(.focusLeft)
         windows.failing = [2]
         clock.fire(advancingBy: 0.09)
+        let writesAfterFailure = windows.writes(2)
         clock.fire(advancingBy: 0.3)
+        XCTAssertEqual(windows.writes(2), writesAfterFailure)
         XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
         XCTAssertTrue(controller.workspace.contains(2))
+    }
+
+    func testFocusEchoDuringAnimationDoesNotInterruptIt() {
+        let (controller, windows) = makeController([1, 2, 3])
+        controller.handle(.focusLeft)
+        clock.fire(advancingBy: 0.09)
+        let calls = windows.setFrameCalls.count
+        controller.handle(.focused(2))
+        XCTAssertTrue(clock.isRunning)
+        XCTAssertEqual(windows.setFrameCalls.count, calls)
+
+        clock.fire(advancingBy: 0.3)
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
+    }
+
+    func testFocusOfAnotherWindowDuringAnimationStillRelayouts() {
+        let (controller, _) = makeController([1, 2, 3])
+        controller.handle(.focusLeft)
+        XCTAssertEqual(controller.workspace.focusedWindow, 2)
+        controller.handle(.focused(1))
+        XCTAssertEqual(controller.workspace.focusedWindow, 1)
     }
 
     func testOnChangeFiresOnChangeAndNotWithoutOne() {

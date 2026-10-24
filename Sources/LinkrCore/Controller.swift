@@ -75,6 +75,7 @@ public final class Controller {
             relayout()
         case .focused(let id):
             guard workspace.contains(id) else { return }
+            if animator?.isAnimating == true, id == workspace.focusedWindow { return }
             workspace.focus(window: id)
             lastApplied[id] = nil
             relayout()
