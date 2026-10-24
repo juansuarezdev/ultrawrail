@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
     private let settingsStore = MotionSettingsStore()
     private var controller: Controller?
+    private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
     private var statusLineItem: NSMenuItem?
     private var permissionTimer: Timer?
@@ -74,6 +75,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         controller.motion = settingsStore.settings
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
+        templatePanel = TemplatePanelController(controller: controller)
+        controller.onShowTemplates = { [weak self] in self?.templatePanel?.toggle() }
         controller.start()
         self.controller = controller
 
