@@ -106,4 +106,55 @@ final class WorkspaceTests: XCTestCase {
         ws.apply(.cycleWidth)
         XCTAssertTrue(ws.columns.isEmpty)
     }
+
+    func testStackLeftMovesFocusedWindowIntoLeftColumn() {
+        var ws = makeWorkspace(3)
+        ws.apply(.stackLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2, 3]])
+        XCTAssertEqual(ws.focusedWindow, 3)
+        XCTAssertEqual(ws.focusedRow, 1)
+    }
+
+    func testStackLeftRemovingEmptiedColumnKeepsFocus() {
+        var ws = makeWorkspace(2)
+        ws.apply(.stackLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1, 2]])
+        XCTAssertEqual(ws.focusedColumn, 0)
+        XCTAssertEqual(ws.focusedWindow, 2)
+    }
+
+    func testStackLeftOnFirstColumnIsNoOp() {
+        var ws = makeWorkspace(2)
+        ws.apply(.focusLeft)
+        ws.apply(.stackLeft)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2]])
+    }
+
+    func testUnstackExpelsFocusedWindowToNewColumnOnTheRight() {
+        var ws = makeWorkspace(3)
+        ws.apply(.stackLeft)
+        ws.apply(.unstack)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2], [3]])
+        XCTAssertEqual(ws.focusedWindow, 3)
+        XCTAssertEqual(ws.focusedColumn, 2)
+    }
+
+    func testUnstackSingleWindowIsNoOp() {
+        var ws = makeWorkspace(2)
+        ws.apply(.unstack)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2]])
+    }
+
+    func testFocusUpAndDownMoveWithinStack() {
+        var ws = makeWorkspace(2)
+        ws.apply(.stackLeft)
+        ws.apply(.focusUp)
+        XCTAssertEqual(ws.focusedWindow, 1)
+        ws.apply(.focusUp)
+        XCTAssertEqual(ws.focusedWindow, 1)
+        ws.apply(.focusDown)
+        XCTAssertEqual(ws.focusedWindow, 2)
+        ws.apply(.focusDown)
+        XCTAssertEqual(ws.focusedWindow, 2)
+    }
 }

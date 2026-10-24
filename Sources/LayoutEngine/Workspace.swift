@@ -75,8 +75,33 @@ public struct Workspace: Equatable, Sendable {
                 columns[focusedColumn].restoreWidth = columns[focusedColumn].width
                 columns[focusedColumn].width = 1.0
             }
-        case .focusUp, .focusDown, .centerColumn, .stackLeft, .unstack:
+        case .focusUp:
+            focusedRow = max(0, focusedRow - 1)
+        case .focusDown:
+            focusedRow = min(columns[focusedColumn].windows.count - 1, focusedRow + 1)
+        case .stackLeft:
+            stackLeft()
+        case .unstack:
+            unstack()
+        case .centerColumn:
             break
         }
+    }
+
+    private mutating func stackLeft() {
+        guard focusedColumn > 0, let id = focusedWindow else { return }
+        columns[focusedColumn].windows.remove(at: focusedRow)
+        if columns[focusedColumn].windows.isEmpty { columns.remove(at: focusedColumn) }
+        focusedColumn -= 1
+        columns[focusedColumn].windows.append(id)
+        focusedRow = columns[focusedColumn].windows.count - 1
+    }
+
+    private mutating func unstack() {
+        guard columns[focusedColumn].windows.count > 1, let id = focusedWindow else { return }
+        columns[focusedColumn].windows.remove(at: focusedRow)
+        columns.insert(Column(windows: [id]), at: focusedColumn + 1)
+        focusedColumn += 1
+        focusedRow = 0
     }
 }
