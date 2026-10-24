@@ -19,6 +19,8 @@ public final class Controller {
     public private(set) var failedHotkeys: [String] = []
     public var motion = MotionSettings()
     public var onChange: ((WorkspaceSnapshot) -> Void)?
+    public var onShowTemplates: (() -> Void)?
+    public var managedWindows: [WindowID] { workspace.allWindows }
 
     private let windows: WindowService
     private let hotkeys: HotkeyService
@@ -59,7 +61,16 @@ public final class Controller {
         relayout()
     }
 
+    public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
+
+    public func applyTemplate(_ template: Template, assignment: [WindowID?]) {
+        workspace.apply(template, assignment: assignment, viewport: windows.usableFrame(), config: config)
+        relayout()
+        if let id = workspace.focusedWindow { windows.focus(id) }
+    }
+
     public func handle(_ command: Command) {
+        if command == .showTemplates { onShowTemplates?(); return }
         workspace.perform(command, viewport: windows.usableFrame(), config: config)
         relayout()
         if let id = workspace.focusedWindow { windows.focus(id) }

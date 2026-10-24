@@ -33,6 +33,8 @@ final class FakeWindows: WindowService {
         if echoFocus { onEvent?(.focused(id)) }
     }
     func isAlive(_ id: WindowID) -> Bool { alive.contains(id) }
+    var descriptions: [WindowID: WindowDescription] = [:]
+    func describe(_ id: WindowID) -> WindowDescription? { descriptions[id] }
     func writes(_ id: Int) -> Int {
         setFrameCalls.filter { $0.id == WindowID(id) }.count
     }

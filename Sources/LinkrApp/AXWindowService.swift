@@ -87,6 +87,9 @@ final class AXWindowService: WindowService {
         NSRunningApplication(processIdentifier: entry.pid)?.activate()
     }
 
+    // Temporary: replaced by the real implementation in Task 3.
+    func describe(_ id: WindowID) -> WindowDescription? { nil }
+
     func isAlive(_ id: WindowID) -> Bool {
         guard let entry = entries[id] else { return false }
         var value: CFTypeRef?

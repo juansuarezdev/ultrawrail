@@ -115,7 +115,7 @@ public struct Workspace: Equatable, Sendable {
             moveColumn(by: -1)
         case .moveColumnRight:
             moveColumn(by: 1)
-        case .centerColumn:
+        case .centerColumn, .showTemplates:
             break
         }
     }

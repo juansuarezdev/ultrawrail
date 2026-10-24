@@ -12,6 +12,15 @@ public struct WindowInfo: Equatable, Sendable {
     }
 }
 
+public struct WindowDescription: Equatable, Sendable {
+    public let appName: String
+    public let pid: Int32
+    public init(appName: String, pid: Int32) {
+        self.appName = appName
+        self.pid = pid
+    }
+}
+
 public enum WindowEvent: Equatable, Sendable {
     case opened(WindowInfo)
     case closed(WindowID)
@@ -30,6 +39,7 @@ public protocol WindowService: AnyObject {
     func setFrame(_ rect: CGRect, for id: WindowID, moveOnly: Bool) -> Bool
     func focus(_ id: WindowID)
     func isAlive(_ id: WindowID) -> Bool
+    func describe(_ id: WindowID) -> WindowDescription?
 }
 
 @MainActor
