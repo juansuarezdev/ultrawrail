@@ -10,7 +10,7 @@ final class FakeWindows: WindowService {
     var alive: Set<WindowID> = []
     var failing: Set<WindowID> = []
     var frame = CGRect(x: 0, y: 0, width: 1000, height: 800)
-    private(set) var setFrameCalls: [(id: WindowID, rect: CGRect)] = []
+    private(set) var setFrameCalls: [(id: WindowID, rect: CGRect, moveOnly: Bool)] = []
     private(set) var focusCalls: [WindowID] = []
 
     func add(_ id: Int, manageable: Bool = true) {
@@ -21,8 +21,8 @@ final class FakeWindows: WindowService {
     func start() {}
     func allWindows() -> [WindowInfo] { existing }
     func usableFrame() -> CGRect { frame }
-    func setFrame(_ rect: CGRect, for id: WindowID) -> Bool {
-        setFrameCalls.append((id, rect))
+    func setFrame(_ rect: CGRect, for id: WindowID, moveOnly: Bool) -> Bool {
+        setFrameCalls.append((id, rect, moveOnly))
         onSetFrame?()
         return !failing.contains(id)
     }

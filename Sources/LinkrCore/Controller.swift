@@ -118,7 +118,7 @@ public final class Controller {
 
     /// Returns false when the window was dropped after repeated failures.
     private func write(_ rect: CGRect, to id: WindowID) -> Bool {
-        if windows.setFrame(rect, for: id) {
+        if windows.setFrame(rect, for: id, moveOnly: false) {
             lastApplied[id] = rect
             failures[id] = nil
             return true
@@ -138,13 +138,13 @@ public final class Controller {
         var dropped = false
         for (id, rect) in frames.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             guard workspace.contains(id) else { continue }
-            if windows.setFrame(rect, for: id) {
+            if windows.setFrame(rect, for: id, moveOnly: !finished) {
                 lastApplied[id] = rect
                 failures[id] = nil
                 continue
             }
             animator?.remove(id)
-            if let target = animationTargets[id], windows.setFrame(target, for: id) {
+            if let target = animationTargets[id], windows.setFrame(target, for: id, moveOnly: false) {
                 lastApplied[id] = target
             }
             if registerFailure(id) { dropped = true }

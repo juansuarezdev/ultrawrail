@@ -142,6 +142,41 @@ final class ControllerAnimationTests: XCTestCase {
         XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
     }
 
+    func testIntermediateFramesAreMoveOnlyAndFinalFrameWritesSize() {
+        let (controller, windows) = makeController([1, 2, 3])
+        let baseline = windows.setFrameCalls.count
+        controller.handle(.focusLeft)
+        clock.fire(advancingBy: 0.09)
+        let midCalls = windows.setFrameCalls.dropFirst(baseline)
+        XCTAssertFalse(midCalls.isEmpty)
+        XCTAssertTrue(midCalls.allSatisfy { $0.moveOnly })
+
+        clock.fire(advancingBy: 0.3)
+        let final = windows.setFrameCalls.dropFirst(baseline + midCalls.count)
+        XCTAssertFalse(final.isEmpty)
+        XCTAssertFalse(final.last!.moveOnly)
+    }
+
+    func testNonAnimatedWritesAreNotMoveOnly() {
+        let (controller, windows) = makeController([1, 2, 3], speed: .off)
+        XCTAssertTrue(windows.setFrameCalls.allSatisfy { !$0.moveOnly })
+        controller.handle(.focusLeft)
+        controller.handle(.cycleWidth)
+        XCTAssertFalse(windows.setFrameCalls.isEmpty)
+        XCTAssertTrue(windows.setFrameCalls.allSatisfy { !$0.moveOnly })
+    }
+
+    func testForcedRelayoutWritesSizeEvenAfterAnimation() {
+        let (controller, windows) = makeController([1, 2, 3])
+        controller.handle(.focusLeft)
+        clock.fire(advancingBy: 0.3)
+        let before = windows.setFrameCalls.count
+        controller.relayout(force: true)
+        let forced = windows.setFrameCalls.dropFirst(before)
+        XCTAssertFalse(forced.isEmpty)
+        XCTAssertTrue(forced.allSatisfy { !$0.moveOnly })
+    }
+
     func testFocusOfAnotherWindowDuringAnimationStillRelayouts() {
         let (controller, _) = makeController([1, 2, 3])
         controller.handle(.focusLeft)

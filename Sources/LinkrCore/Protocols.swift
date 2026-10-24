@@ -25,8 +25,9 @@ public protocol WindowService: AnyObject {
     func allWindows() -> [WindowInfo]
     /// Usable area of the managed display, top-left origin (Accessibility coordinates).
     func usableFrame() -> CGRect
-    /// Returns false when the write failed.
-    func setFrame(_ rect: CGRect, for id: WindowID) -> Bool
+    /// Returns false when the write failed. `moveOnly` writes the position and skips the size
+    /// (intermediate animation frames); otherwise position and size are both written.
+    func setFrame(_ rect: CGRect, for id: WindowID, moveOnly: Bool) -> Bool
     func focus(_ id: WindowID)
     func isAlive(_ id: WindowID) -> Bool
 }

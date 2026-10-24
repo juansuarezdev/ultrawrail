@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         previewView.animationDuration = settingsStore.settings.previewDuration(reduceMotion: reduceMotion)
         previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
         statusLineItem?.title = statusText()
+        previewView.setAccessibilityLabel(statusText())
     }
 
     // MARK: Menu
@@ -105,6 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if controller != nil {
             let preview = NSMenuItem()
+            previewView.setAccessibilityLabel(statusText())
             preview.view = previewView
             menu.addItem(preview)
         }
