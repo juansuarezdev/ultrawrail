@@ -7,6 +7,11 @@ let package = Package(
     targets: [
         .target(name: "LayoutEngine"),
         .target(name: "LinkrCore", dependencies: ["LayoutEngine"]),
+        .executableTarget(
+            name: "LinkrApp",
+            dependencies: ["LayoutEngine", "LinkrCore"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(name: "LayoutEngineTests", dependencies: ["LayoutEngine"]),
         .testTarget(
             name: "LinkrCoreTests",
