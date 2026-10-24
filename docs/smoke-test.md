@@ -39,6 +39,16 @@ Pasos adicionales:
 10. Abre el menú, ciérralo y mira la CPU de Linkr en el Monitor de Actividad: debe quedar en reposo (el temporizador de la previsualización se detiene al cerrar el menú).
 11. Abre una app pesada (por ejemplo un navegador con varias pestañas) junto a TextEdit y repite el paso 2: si se ven tirones, anótalo; el salto automático por frame lento debe evitar que se quede a medias.
 
+## Plantillas
+
+1. Ctrl+Alt+T abre el panel centrado con tres tarjetas (Mitades, Principal + lateral, Mitad + dos apiladas). Pulsarlo de nuevo, o Esc, lo cierra sin cambiar nada.
+2. Elegir cada tarjeta redibuja los huecos y rellena las fichas por orden de columna.
+3. Arrastrar una ficha de la lista a un hueco la asigna; sobre un hueco ocupado, intercambia o libera al ocupante.
+4. Arrastrar una ficha desde un hueco a la lista la desasigna; con ventanas sin hueco aparece el aviso de columnas extra.
+5. Aplicar (botón o Intro) reordena las ventanas con animación y mantiene el foco; el preview del menú refleja el cambio.
+6. Con más ventanas que huecos, las sobrantes quedan como columnas a la derecha y ninguna desaparece.
+7. El panel se ve bien en modo claro y oscuro.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
