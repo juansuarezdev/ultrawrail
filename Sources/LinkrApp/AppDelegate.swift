@@ -1,14 +1,22 @@
 import AppKit
 import ApplicationServices
+import LayoutEngine
 import LinkrCore
+import QuartzCore
 import ServiceManagement
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
+    private let settingsStore = MotionSettingsStore()
     private var controller: Controller?
+    private var lastSnapshot: WorkspaceSnapshot?
+    private var statusLineItem: NSMenuItem?
     private var permissionTimer: Timer?
     private var observers: [NSObjectProtocol] = []
+
+    private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem.button?.image = NSImage(
@@ -57,7 +65,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startController() {
         guard controller == nil else { return }
-        let controller = Controller(windows: AXWindowService(), hotkeys: CarbonHotkeyService())
+        let animator = Animator(clock: TimerFrameClock(), now: { CACurrentMediaTime() })
+        let controller = Controller(
+            windows: AXWindowService(),
+            hotkeys: CarbonHotkeyService(),
+            animator: animator,
+            reduceMotion: { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        )
+        controller.motion = settingsStore.settings
+        controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         controller.start()
         self.controller = controller
 
@@ -74,12 +90,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observers = [screens, wake]
     }
 
+    private func workspaceChanged(_ snapshot: WorkspaceSnapshot) {
+        lastSnapshot = snapshot
+        previewView.animationDuration = settingsStore.settings.previewDuration(reduceMotion: reduceMotion)
+        previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
+        statusLineItem?.title = statusText()
+    }
+
     // MARK: Menu
 
     private func rebuildMenu() {
         let menu = NSMenu()
+        menu.delegate = self
+
+        if controller != nil {
+            let preview = NSMenuItem()
+            preview.view = previewView
+            menu.addItem(preview)
+        }
+
         let status = NSMenuItem(title: statusText(), action: nil, keyEquivalent: "")
         status.isEnabled = false
+        statusLineItem = status
         menu.addItem(status)
 
         if let failed = controller?.failedHotkeys, !failed.isEmpty {
@@ -92,20 +124,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(.separator())
+        if controller != nil {
+            let settings = settingsStore.settings
+
+            let speedItem = NSMenuItem(title: "Velocidad de animación", action: nil, keyEquivalent: "")
+            let speedMenu = NSMenu()
+            for (speed, title) in [(MotionSpeed.fast, "Rápida"), (.normal, "Normal"), (.off, "Desactivada")] {
+                let item = NSMenuItem(title: title, action: #selector(selectSpeed(_:)), keyEquivalent: "")
+                item.representedObject = speed.rawValue
+                item.state = settings.speed == speed ? .on : .off
+                item.target = self
+                speedMenu.addItem(item)
+            }
+            speedItem.submenu = speedMenu
+            menu.addItem(speedItem)
+
+            let reduce = NSMenuItem(title: "Respetar Reducir movimiento del sistema", action: #selector(toggleReduceMotion), keyEquivalent: "")
+            reduce.state = settings.respectReduceMotion ? .on : .off
+            reduce.target = self
+            menu.addItem(reduce)
+        }
+
         let login = NSMenuItem(title: "Iniciar al arrancar", action: #selector(toggleLogin), keyEquivalent: "")
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        login.target = self
         menu.addItem(login)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Salir de Linkr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
-        for item in menu.items where item.action != nil && item.target == nil && item.action != #selector(NSApplication.terminate(_:)) {
+        for item in menu.items where item.action == #selector(openAccessibilitySettings) {
             item.target = self
         }
         statusItem.menu = menu
     }
 
     private func statusText() -> String {
-        controller == nil ? "Esperando permiso de Accesibilidad" : "Activo"
+        guard controller != nil else { return "Esperando permiso de Accesibilidad" }
+        guard let workspace = lastSnapshot?.workspace else { return "Activo" }
+        return "Activo · \(workspace.columns.count) columnas · \(workspace.allWindows.count) ventanas"
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        previewView.menuDidOpen()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        previewView.menuDidClose()
+    }
+
+    @objc private func selectSpeed(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let speed = MotionSpeed(rawValue: raw) else { return }
+        var settings = settingsStore.settings
+        settings.speed = speed
+        apply(settings)
+    }
+
+    @objc private func toggleReduceMotion() {
+        var settings = settingsStore.settings
+        settings.respectReduceMotion.toggle()
+        apply(settings)
+    }
+
+    private func apply(_ settings: MotionSettings) {
+        settingsStore.settings = settings
+        controller?.motion = settings
+        rebuildMenu()
     }
 
     @objc private func toggleLogin() {

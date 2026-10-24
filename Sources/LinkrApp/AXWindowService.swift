@@ -27,6 +27,7 @@ final class AXWindowService: WindowService {
     private var entries: [WindowID: Entry] = [:]
     private var observers: [pid_t: AXObserver] = [:]
     private var nextID = 1
+    private var lastWrittenSize: [WindowID: CGSize] = [:]
     private let ownPID = ProcessInfo.processInfo.processIdentifier
 
     // MARK: WindowService
@@ -68,7 +69,12 @@ final class AXWindowService: WindowService {
         var size = rect.size
         guard let position = AXValueCreate(.cgPoint, &origin),
               let dimensions = AXValueCreate(.cgSize, &size) else { return false }
-        let sizeResult = AXUIElementSetAttributeValue(entry.element, kAXSizeAttribute as CFString, dimensions)
+        // Animation frames only move windows; skip the second AX call when the size is unchanged.
+        var sizeResult = AXError.success
+        if lastWrittenSize[id] != rect.size {
+            sizeResult = AXUIElementSetAttributeValue(entry.element, kAXSizeAttribute as CFString, dimensions)
+            if sizeResult == .success { lastWrittenSize[id] = rect.size }
+        }
         let positionResult = AXUIElementSetAttributeValue(entry.element, kAXPositionAttribute as CFString, position)
         return sizeResult == .success && positionResult == .success
     }
@@ -119,6 +125,7 @@ final class AXWindowService: WindowService {
         }
         for (id, entry) in entries where entry.pid == pid {
             entries[id] = nil
+            lastWrittenSize[id] = nil
             onEvent?(.closed(id))
         }
     }
@@ -138,6 +145,7 @@ final class AXWindowService: WindowService {
         case kAXUIElementDestroyedNotification:
             if let id = id(of: element) {
                 entries[id] = nil
+                lastWrittenSize[id] = nil
                 onEvent?(.closed(id))
             }
         case kAXWindowMiniaturizedNotification:
