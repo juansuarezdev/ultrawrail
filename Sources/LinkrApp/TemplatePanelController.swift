@@ -55,6 +55,7 @@ final class TemplatePanelController: NSObject {
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.contentView = content
+        panel.defaultButtonCell = apply.cell as? NSButtonCell
         panel.center()
         self.panel = panel
         NSApp.activate(ignoringOtherApps: true)
