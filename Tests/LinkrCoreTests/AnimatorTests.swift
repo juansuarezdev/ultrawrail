@@ -87,20 +87,69 @@ final class AnimatorTests: XCTestCase {
         XCTAssertFalse(clock.isRunning)
     }
 
-    func testRestartInsideFrameCallbackIsNotClobbered() {
+    func testRestartInsideFinishedFrameCallbackIsNotClobbered() {
         let (animator, clock) = makeAnimator()
-        var calls = 0
-        animator.onFrame = { _, _ in
-            calls += 1
-            if calls == 1 {
+        var emitted: [[WindowID: CGRect]] = []
+        var restarted = false
+        animator.onFrame = { frames, _ in
+            emitted.append(frames)
+            if !restarted {
+                restarted = true
                 animator.cancel()
                 animator.start(Tween(from: [2: self.start], to: [2: self.end], duration: 0.2))
             }
         }
         animator.start(Tween(from: [1: start], to: [1: end], duration: 0.2))
-        clock.fire(advancingBy: 0.05)
+        clock.fire(advancingBy: 0.5)
         XCTAssertTrue(animator.isAnimating)
         XCTAssertTrue(clock.isRunning)
+
+        clock.fire(advancingBy: 0.05)
+        XCTAssertEqual(emitted.count, 2)
+        XCTAssertEqual(Set(emitted[1].keys), [2])
+    }
+
+    func testRestartInsideSlowSnapCallbackIsNotClobbered() {
+        let (animator, clock) = makeAnimator()
+        var calls = 0
+        var emitted: [[WindowID: CGRect]] = []
+        animator.onFrame = { frames, _ in
+            calls += 1
+            emitted.append(frames)
+            if calls == 1 {
+                clock.time += 0.05
+            } else if calls == 2 {
+                animator.cancel()
+                animator.start(Tween(from: [2: self.start], to: [2: self.end], duration: 0.2))
+            }
+        }
+        animator.start(Tween(from: [1: start], to: [1: end], duration: 0.2))
+        clock.fire(advancingBy: 0.01)
+        XCTAssertEqual(calls, 2)
+        XCTAssertTrue(animator.isAnimating)
+        XCTAssertTrue(clock.isRunning)
+
+        clock.fire(advancingBy: 0.05)
+        XCTAssertEqual(emitted.count, 3)
+        XCTAssertEqual(Set(emitted[2].keys), [2])
+    }
+
+    func testSlowFrameSnapSkipsWindowRemovedInsideCallback() {
+        let (animator, clock) = makeAnimator()
+        var emitted: [[WindowID: CGRect]] = []
+        animator.onFrame = { frames, _ in
+            emitted.append(frames)
+            if emitted.count == 1 {
+                animator.remove(2)
+                clock.time += 0.05
+            }
+        }
+        animator.start(Tween(from: [1: start, 2: start], to: [1: end, 2: end], duration: 0.2))
+        clock.fire(advancingBy: 0.01)
+        XCTAssertEqual(emitted.count, 2)
+        XCTAssertEqual(Set(emitted[1].keys), [1])
+        XCTAssertEqual(emitted[1][1], end)
+        XCTAssertFalse(animator.isAnimating)
     }
 
     func testMotionSettingsDurations() {

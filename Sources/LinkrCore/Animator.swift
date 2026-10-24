@@ -69,7 +69,8 @@ public final class Animator {
             return
         }
         if now() - began > slowFrameLimit {
-            onFrame?(tween.frames(at: tween.duration), true)
+            guard let current = self.tween else { return }
+            onFrame?(current.frames(at: current.duration), true)
             if generation == generationBefore { cancel() }
         }
     }
