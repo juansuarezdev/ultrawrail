@@ -17,3 +17,16 @@ Cubre lo que los tests unitarios no pueden: Accessibility y atajos reales.
 12. Menú: "Iniciar al arrancar" marca/desmarca; "Salir de Linkr" cierra la app.
 
 Si algo falla, anota el paso y el comportamiento observado.
+
+Pasos adicionales:
+
+13. Abre una segunda app (por ejemplo Safari junto a TextEdit): ⌃⌥H / ⌃⌥L mueven el foco entre columnas de ambas apps. ⌘-Tab hacia una ventana aparcada la trae a la vista.
+14. ⌘M sobre una columna: las demás se recolocan. Restáurala desde el Dock: vuelve a la tira.
+15. Con tres ventanas de medio ancho, cierra la del medio: no debe quedar la mitad derecha en blanco.
+
+## Limitaciones conocidas
+
+- Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
+- Las ventanas de pantallas secundarias u otros Spaces se traen a la tira de la pantalla principal cuando reciben el foco.
+- Las apps ocultas (⌘H) dejan huecos en la tira.
+- No se comprueban los valores de retorno del registro de notificaciones AX.
