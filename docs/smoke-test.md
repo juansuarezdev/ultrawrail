@@ -45,7 +45,7 @@ Pasos adicionales:
 2. Elegir cada tarjeta redibuja los huecos y rellena las fichas por orden de columna.
 3. Arrastrar una ficha de la lista a un hueco la asigna; sobre un hueco ocupado, intercambia o libera al ocupante.
 4. Arrastrar una ficha desde un hueco a la lista la desasigna; con ventanas sin hueco aparece el aviso de columnas extra.
-5. Aplicar (botón o Intro) reordena las ventanas con animación y mantiene el foco; el preview del menú refleja el cambio.
+5. Aplicar (botón o Intro) reordena las ventanas (se deslizan las que solo cambian de posición; las que cambian de tamaño o de pila saltan) y mantiene el foco; el preview del menú refleja el cambio.
 6. Con más ventanas que huecos, las sobrantes quedan como columnas a la derecha y ninguna desaparece.
 7. El panel se ve bien en modo claro y oscuro.
 

@@ -16,6 +16,7 @@ final class TemplatePanelController: NSObject {
     func toggle() {
         if let panel, panel.isVisible {
             close()
+            controller.refocus()
         } else {
             open()
         }
@@ -76,5 +77,6 @@ final class TemplatePanelController: NSObject {
 
     @objc private func cancelTapped() {
         close()
+        controller.refocus()
     }
 }

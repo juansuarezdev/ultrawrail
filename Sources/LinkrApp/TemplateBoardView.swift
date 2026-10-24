@@ -162,7 +162,7 @@ final class TemplateBoardView: NSView {
         for (index, rect) in slotRects().enumerated() where rect.contains(point) {
             if let id = board.assignment[index] { return id }
         }
-        for (index, id) in listChips().enumerated() where chipRect(inList: index).contains(point) {
+        for (index, id) in listChips().enumerated().reversed() where chipRect(inList: index).contains(point) {
             return id
         }
         return nil

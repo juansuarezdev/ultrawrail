@@ -63,6 +63,11 @@ public final class Controller {
 
     public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
 
+    /// Gives keyboard focus back to the focused window (used when a panel closes without changes).
+    public func refocus() {
+        if let id = workspace.focusedWindow { windows.focus(id) }
+    }
+
     public func applyTemplate(_ template: Template, assignment: [WindowID?]) {
         workspace.apply(template, assignment: assignment, viewport: windows.usableFrame(), config: config)
         relayout()
