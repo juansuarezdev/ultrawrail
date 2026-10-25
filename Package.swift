@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "Linkr",
+    name: "Panerail",
     platforms: [.macOS(.v13)],
     targets: [
         .target(name: "LayoutEngine"),
-        .target(name: "LinkrCore", dependencies: ["LayoutEngine"]),
+        .target(name: "PanerailCore", dependencies: ["LayoutEngine"]),
         .executableTarget(
-            name: "LinkrApp",
-            dependencies: ["LayoutEngine", "LinkrCore"],
+            name: "PanerailApp",
+            dependencies: ["LayoutEngine", "PanerailCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(name: "LayoutEngineTests", dependencies: ["LayoutEngine"]),
         .testTarget(
-            name: "LinkrCoreTests",
-            dependencies: ["LinkrCore", "LayoutEngine"],
+            name: "PanerailCoreTests",
+            dependencies: ["PanerailCore", "LayoutEngine"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

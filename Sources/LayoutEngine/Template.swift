@@ -53,6 +53,6 @@ public struct Template: Equatable, Sendable, Codable {
                  columns: [TemplateColumn(width: 0.5, slots: 2), TemplateColumn(width: 0.5, slots: 2)]),
     ]
 
-    /// Every template that ships with Linkr, in display order.
+    /// Every template that ships with Panerail, in display order.
     public static let builtIn: [Template] = all + ultrawide
 }
