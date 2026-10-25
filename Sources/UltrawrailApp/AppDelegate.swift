@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
     private var statusLineItem: NSMenuItem?
+    private var pageLineItem: NSMenuItem?
     private var permissionTimer: Timer?
     private var observers: [NSObjectProtocol] = []
 
@@ -151,6 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         previewView.animationDuration = model.motion.previewDuration(reduceMotion: reduceMotion)
         previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
         statusLineItem?.title = statusText()
+        updatePageLine()
         previewView.setAccessibilityLabel(statusText())
     }
 
@@ -171,6 +173,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         status.isEnabled = false
         statusLineItem = status
         menu.addItem(status)
+
+        let pageLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        pageLine.isEnabled = false
+        pageLineItem = pageLine
+        updatePageLine()
+        menu.addItem(pageLine)
 
         if let failed = controller?.failedHotkeys, !failed.isEmpty {
             let conflict = NSMenuItem(title: "Atajos en conflicto: \(failed.joined(separator: " "))", action: nil, keyEquivalent: "")
@@ -249,6 +257,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.target = self
         }
         statusItem.menu = menu
+    }
+
+    private func updatePageLine() {
+        guard let snapshot = lastSnapshot, snapshot.pageCount > 1 else {
+            pageLineItem?.isHidden = true
+            return
+        }
+        pageLineItem?.title = "Página \(snapshot.page) de \(snapshot.pageCount)"
+        pageLineItem?.isHidden = false
     }
 
     private func statusText() -> String {

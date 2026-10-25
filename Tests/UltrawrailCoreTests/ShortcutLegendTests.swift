@@ -24,7 +24,20 @@ final class ShortcutLegendTests: XCTestCase {
 
     func testEveryCommandShortcutIsListed() {
         let titles = ShortcutLegend.entries.map(\.title)
-        XCTAssertEqual(titles.count, 13)
+        XCTAssertEqual(titles.count, 15)
         XCTAssertTrue(titles.contains("Panel de plantillas"))
+    }
+
+    func testPageEntriesUseWinAltAndCommandOption() {
+        let page = ShortcutLegend.entries.first { $0.title == "Página anterior / siguiente" }!
+        XCTAssertEqual(ShortcutLegend.line(for: page, style: .windows),
+                       "Win+Alt+← / →  ·  Página anterior / siguiente")
+        XCTAssertEqual(ShortcutLegend.line(for: page, style: .mac),
+                       "⌘⌥← / →  ·  Página anterior / siguiente")
+        let move = ShortcutLegend.entries.first { $0.title == "Mover ventana a la página anterior / siguiente" }!
+        XCTAssertEqual(ShortcutLegend.line(for: move, style: .windows),
+                       "Win+Alt+Shift+← / →  ·  Mover ventana a la página anterior / siguiente")
+        XCTAssertEqual(ShortcutLegend.line(for: move, style: .mac),
+                       "⌘⌥⇧← / →  ·  Mover ventana a la página anterior / siguiente")
     }
 }

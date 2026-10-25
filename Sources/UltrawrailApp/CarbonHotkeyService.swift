@@ -35,6 +35,7 @@ final class CarbonHotkeyService: HotkeyService {
         let keyCode: Int
         let command: Command
         var shift = false
+        var modifiers: Int?
     }
 
     private static let bindings: [Binding] = [
@@ -57,6 +58,10 @@ final class CarbonHotkeyService: HotkeyService {
         Binding(name: "⌃⌥⇧→", keyCode: kVK_RightArrow, command: .moveColumnRight, shift: true),
         Binding(name: "⌃⌥A", keyCode: kVK_ANSI_A, command: .adoptWindow),
         Binding(name: "⌃⌥T", keyCode: kVK_ANSI_T, command: .showTemplates),
+        Binding(name: "⌘⌥←", keyCode: kVK_LeftArrow, command: .previousPage, modifiers: cmdKey | optionKey),
+        Binding(name: "⌘⌥→", keyCode: kVK_RightArrow, command: .nextPage, modifiers: cmdKey | optionKey),
+        Binding(name: "⌘⌥⇧←", keyCode: kVK_LeftArrow, command: .moveWindowToPreviousPage, modifiers: cmdKey | optionKey | shiftKey),
+        Binding(name: "⌘⌥⇧→", keyCode: kVK_RightArrow, command: .moveWindowToNextPage, modifiers: cmdKey | optionKey | shiftKey),
     ]
 
     private var refs: [EventHotKeyRef] = []
@@ -69,7 +74,7 @@ final class CarbonHotkeyService: HotkeyService {
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
                 UInt32(binding.keyCode),
-                UInt32(controlKey | optionKey | (binding.shift ? shiftKey : 0)),
+                UInt32(binding.modifiers ?? (controlKey | optionKey | (binding.shift ? shiftKey : 0))),
                 EventHotKeyID(signature: hotkeySignature, id: UInt32(index)),
                 GetApplicationEventTarget(),
                 0,

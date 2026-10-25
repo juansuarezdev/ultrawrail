@@ -7,6 +7,8 @@ public struct ShortcutLegendEntry: Equatable, Sendable {
     public let keys: [String]
     public let shift: Bool
     public let title: String
+    /// Page shortcuts use Win+Alt (⌘⌥) instead of Ctrl+Alt (⌃⌥).
+    public var usesCommand = false
 }
 
 /// Human-readable list of the global shortcuts, rendered for a Windows or a Mac keyboard.
@@ -25,13 +27,19 @@ public enum ShortcutLegend {
         ShortcutLegendEntry(keys: ["L", "→"], shift: true, title: "Mover columna a la derecha"),
         ShortcutLegendEntry(keys: ["A"], shift: false, title: "Añadir ventana nueva a la tira"),
         ShortcutLegendEntry(keys: ["T"], shift: false, title: "Panel de plantillas"),
+        ShortcutLegendEntry(keys: ["←", "→"], shift: false, title: "Página anterior / siguiente", usesCommand: true),
+        ShortcutLegendEntry(keys: ["←", "→"], shift: true, title: "Mover ventana a la página anterior / siguiente", usesCommand: true),
     ]
 
     public static func line(for entry: ShortcutLegendEntry, style: KeyboardStyle) -> String {
         let modifiers: String
         switch style {
-        case .windows: modifiers = entry.shift ? "Ctrl+Alt+Shift+" : "Ctrl+Alt+"
-        case .mac: modifiers = entry.shift ? "⌃⌥⇧" : "⌃⌥"
+        case .windows:
+            let base = entry.usesCommand ? "Win+Alt+" : "Ctrl+Alt+"
+            modifiers = entry.shift ? base + "Shift+" : base
+        case .mac:
+            let base = entry.usesCommand ? "⌘⌥" : "⌃⌥"
+            modifiers = entry.shift ? base + "⇧" : base
         }
         return "\(modifiers)\(entry.keys.joined(separator: " / "))  ·  \(entry.title)"
     }

@@ -89,6 +89,16 @@ Pasos adicionales:
 4. "Restaurar valores" desactiva las tres opciones.
 5. Las tres opciones persisten al cerrar y reabrir Ultrawrail.
 
+## Páginas
+
+1. Win+Alt+→ en una página con ventanas crea la página 2 y esconde las ventanas de la 1.
+2. Win+Alt+← vuelve y recoloca las ventanas.
+3. Win+Alt+Shift+→ lleva la ventana con foco a la página siguiente y la sigue.
+4. Las ventanas nuevas entran en la página activa.
+5. Cerrar la última ventana de una página intermedia no rompe el cambio.
+6. El menú muestra "Página N de M".
+7. Brave/Chrome usan Cmd+Option+←/→ para cambiar de pestaña: si el atajo no registra o choca, se indica en el menú como cualquier atajo fallido.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
