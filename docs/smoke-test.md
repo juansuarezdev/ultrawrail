@@ -71,6 +71,16 @@ Pasos adicionales:
 6. Los ajustes persisten al cerrar y reabrir Linkr.
 7. Con 2 columnas de 50 %, cambiar el foco entre ellas no mueve las ventanas (sin desplazamiento leve).
 
+## Editor de plantillas
+
+1. Ajustes tiene la pestaña Plantillas: lista con las 6 de serie (3 con la etiqueta UW) y "Mis plantillas".
+2. Las de serie son de solo lectura; "Duplicar" crea una copia editable y la selecciona.
+3. Arrastrar un divisor reparte el ancho entre las dos columnas contiguas, con imán a 25, 33, 50, 66 y 75 %, y nunca baja del 15 %.
+4. "+ Columna" parte la más ancha; "−" fusiona con la vecina; "− n huecos +" cambia entre 1 y 3 huecos.
+5. El selector 16:9, 21:9, 32:9 cambia la proporción del lienzo; por defecto la del monitor.
+6. Las plantillas propias salen en Ctrl+Alt+T tras las de serie; con muchas, las tarjetas se desplazan con la rueda.
+7. Cerrar y reabrir Linkr conserva las plantillas propias; "Borrar" las quita.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
