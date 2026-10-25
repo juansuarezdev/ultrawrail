@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastSnapshot: WorkspaceSnapshot?
     private var statusLineItem: NSMenuItem?
     private var pageLineItem: NSMenuItem?
+    private var zoneLineItem: NSMenuItem?
     private var permissionTimer: Timer?
     private var observers: [NSObjectProtocol] = []
 
@@ -77,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller?.placement = model.placement
         controller?.config = model.layoutConfig
         controller?.newColumnWidth = model.newColumnWidth
+        controller?.zoneCount = model.zoneCount
         rebuildMenu()
     }
 
@@ -129,6 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.motion = model.motion
         controller.placement = model.placement
         controller.newColumnWidth = model.newColumnWidth
+        controller.zoneCount = model.zoneCount
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         templatePanel = TemplatePanelController(
             controller: controller,
@@ -157,6 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
         statusLineItem?.title = statusText()
         updatePageLine()
+        updateZoneLine()
         previewView.setAccessibilityLabel(statusText())
     }
 
@@ -183,6 +187,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         pageLineItem = pageLine
         updatePageLine()
         menu.addItem(pageLine)
+
+        let zoneLine = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        zoneLine.isEnabled = false
+        zoneLineItem = zoneLine
+        updateZoneLine()
+        menu.addItem(zoneLine)
 
         if let failed = controller?.failedHotkeys, !failed.isEmpty {
             let conflict = NSMenuItem(title: "Atajos en conflicto: \(failed.joined(separator: " "))", action: nil, keyEquivalent: "")
@@ -270,6 +280,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         pageLineItem?.title = "Página \(snapshot.page + 1) de \(snapshot.pageCount)"
         pageLineItem?.isHidden = false
+    }
+
+    private func updateZoneLine() {
+        guard let snapshot = lastSnapshot, snapshot.zoneCount > 1 else {
+            zoneLineItem?.isHidden = true
+            return
+        }
+        zoneLineItem?.title = "Zona \(snapshot.zone + 1) de \(snapshot.zoneCount)"
+        zoneLineItem?.isHidden = false
     }
 
     private func statusText() -> String {

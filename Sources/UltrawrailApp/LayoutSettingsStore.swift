@@ -8,6 +8,7 @@ struct LayoutSettings: Equatable {
     var focusMode: FocusMode = .minimal
     var maxColumnWidth: Double = 0
     var centerStrip: Bool = false
+    var zoneCount: Int = 1
 }
 
 struct LayoutSettingsStore {
@@ -24,6 +25,7 @@ struct LayoutSettingsStore {
             if let raw = defaults.string(forKey: "focusMode"), let mode = FocusMode(rawValue: raw) { value.focusMode = mode }
             if let maxWidth = defaults.object(forKey: "maxColumnWidth") as? Double { value.maxColumnWidth = min(5000, max(0, maxWidth)) }
             if let center = defaults.object(forKey: "centerStrip") as? Bool { value.centerStrip = center }
+            if let zones = defaults.object(forKey: "zoneCount") as? Int { value.zoneCount = min(3, max(1, zones)) }
             return value
         }
         nonmutating set {
@@ -33,6 +35,7 @@ struct LayoutSettingsStore {
             defaults.set(newValue.focusMode.rawValue, forKey: "focusMode")
             defaults.set(newValue.maxColumnWidth, forKey: "maxColumnWidth")
             defaults.set(newValue.centerStrip, forKey: "centerStrip")
+            defaults.set(min(3, max(1, newValue.zoneCount)), forKey: "zoneCount")
         }
     }
 }

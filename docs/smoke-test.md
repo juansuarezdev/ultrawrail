@@ -99,6 +99,16 @@ Pasos adicionales:
 6. El menú muestra "Página N de M".
 7. El registro Carbon de ⌘⌥←/→ NO falla aunque otra app use ese atajo en sus menús: Ultrawrail se lo quita en silencio a Brave/Chrome (cambio de pestaña), VS Code (cambio de editor) e iTerm (navegación entre paneles). Comprueba que en esas apps el atajo cambia de página y no de pestaña/editor/panel.
 
+## Zonas
+
+1. Con 2 zonas la pantalla se divide en dos mitades; las ventanas nuevas entran en la zona con foco.
+2. Ctrl+Alt+Win+→ pasa el foco a la zona siguiente.
+3. Con Shift mueve la ventana a esa zona.
+4. Cada zona cambia de página por separado con Win+Alt+←/→.
+5. Bajar de 3 a 1 zona junta todas las ventanas en la zona restante.
+6. Ctrl+Alt+Win+flechas pueden chocar con atajos de otras apps y macOS no avisa.
+7. La configuración persiste al reiniciar.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

@@ -25,6 +25,7 @@ final class SettingsModel: ObservableObject {
     @Published var focusMode: FocusMode { didSet { commit() } }
     @Published var maxColumnWidth: Double { didSet { commit() } }
     @Published var centerStrip: Bool { didSet { commit() } }
+    @Published var zoneCount: Int { didSet { commit() } }
     @Published var customTemplates: [Template] { didSet { commitTemplates() } }
     @Published var launchAtLogin: Bool {
         didSet {
@@ -54,6 +55,7 @@ final class SettingsModel: ObservableObject {
         focusMode = layout.focusMode
         maxColumnWidth = layout.maxColumnWidth
         centerStrip = layout.centerStrip
+        zoneCount = layout.zoneCount
         customTemplates = templateStore.templates
         launchAtLogin = SMAppService.mainApp.status == .enabled
         loading = false
@@ -71,6 +73,7 @@ final class SettingsModel: ObservableObject {
         focusMode = defaults.focusMode
         maxColumnWidth = defaults.maxColumnWidth
         centerStrip = defaults.centerStrip
+        zoneCount = defaults.zoneCount
     }
 
     private func commit() {
@@ -79,7 +82,8 @@ final class SettingsModel: ObservableObject {
         placementStore.mode = placement
         keyboardStore.style = keyboardStyle
         layoutStore.settings = LayoutSettings(gap: gap, outerGap: outerGap, newColumnWidth: newColumnWidth,
-                                           focusMode: focusMode, maxColumnWidth: maxColumnWidth, centerStrip: centerStrip)
+                                           focusMode: focusMode, maxColumnWidth: maxColumnWidth, centerStrip: centerStrip,
+                                           zoneCount: zoneCount)
         onChange?()
     }
 

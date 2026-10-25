@@ -91,6 +91,13 @@ private struct LayoutTab: View {
                         if !editing { model.maxColumnWidth = maxWidthDraft }
                     }
                 }
+                Picker("Zonas de la pantalla", selection: $model.zoneCount) {
+                    ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text("Cada zona tiene su propia tira, foco y páginas.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             } footer: {
                 Text("Pensado para monitores ultrawide.")
             }

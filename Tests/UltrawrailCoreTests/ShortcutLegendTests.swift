@@ -24,7 +24,7 @@ final class ShortcutLegendTests: XCTestCase {
 
     func testEveryCommandShortcutIsListed() {
         let titles = ShortcutLegend.entries.map(\.title)
-        XCTAssertEqual(titles.count, 15)
+        XCTAssertEqual(titles.count, 17)
         XCTAssertTrue(titles.contains("Panel de plantillas"))
     }
 
@@ -39,5 +39,18 @@ final class ShortcutLegendTests: XCTestCase {
                        "Win+Alt+Shift+← / →  ·  Mover ventana a la página anterior / siguiente")
         XCTAssertEqual(ShortcutLegend.line(for: move, style: .mac),
                        "⌘⌥⇧← / →  ·  Mover ventana a la página anterior / siguiente")
+    }
+
+    func testZoneEntriesUseCtrlAltWin() {
+        let focus = ShortcutLegend.entries.first { $0.title == "Zona anterior / siguiente" }!
+        XCTAssertEqual(ShortcutLegend.line(for: focus, style: .windows),
+                       "Ctrl+Alt+Win+← / →  ·  Zona anterior / siguiente")
+        XCTAssertEqual(ShortcutLegend.line(for: focus, style: .mac),
+                       "⌃⌥⌘← / →  ·  Zona anterior / siguiente")
+        let move = ShortcutLegend.entries.first { $0.title == "Mover ventana a la zona anterior / siguiente" }!
+        XCTAssertEqual(ShortcutLegend.line(for: move, style: .windows),
+                       "Ctrl+Alt+Win+Shift+← / →  ·  Mover ventana a la zona anterior / siguiente")
+        XCTAssertEqual(ShortcutLegend.line(for: move, style: .mac),
+                       "⌃⌥⌘⇧← / →  ·  Mover ventana a la zona anterior / siguiente")
     }
 }

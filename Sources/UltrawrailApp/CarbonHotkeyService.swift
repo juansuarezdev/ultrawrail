@@ -62,6 +62,10 @@ final class CarbonHotkeyService: HotkeyService {
         Binding(name: "⌘⌥→", keyCode: kVK_RightArrow, command: .nextPage, modifiers: cmdKey | optionKey),
         Binding(name: "⌘⌥⇧←", keyCode: kVK_LeftArrow, command: .moveWindowToPreviousPage, modifiers: cmdKey | optionKey | shiftKey),
         Binding(name: "⌘⌥⇧→", keyCode: kVK_RightArrow, command: .moveWindowToNextPage, modifiers: cmdKey | optionKey | shiftKey),
+        Binding(name: "⌃⌥⌘←", keyCode: kVK_LeftArrow, command: .focusZoneLeft, modifiers: controlKey | optionKey | cmdKey),
+        Binding(name: "⌃⌥⌘→", keyCode: kVK_RightArrow, command: .focusZoneRight, modifiers: controlKey | optionKey | cmdKey),
+        Binding(name: "⌃⌥⌘⇧←", keyCode: kVK_LeftArrow, command: .moveWindowToZoneLeft, modifiers: controlKey | optionKey | cmdKey | shiftKey),
+        Binding(name: "⌃⌥⌘⇧→", keyCode: kVK_RightArrow, command: .moveWindowToZoneRight, modifiers: controlKey | optionKey | cmdKey | shiftKey),
     ]
 
     private var refs: [EventHotKeyRef] = []

@@ -9,6 +9,8 @@ public struct ShortcutLegendEntry: Equatable, Sendable {
     public let title: String
     /// Page shortcuts use Win+Alt (⌘⌥) instead of Ctrl+Alt (⌃⌥).
     public var usesCommand = false
+    /// Zone shortcuts use Ctrl+Alt+Win (⌃⌥⌘); only meaningful together with `usesCommand`.
+    public var withControl = false
 }
 
 /// Human-readable list of the global shortcuts, rendered for a Windows or a Mac keyboard.
@@ -29,16 +31,18 @@ public enum ShortcutLegend {
         ShortcutLegendEntry(keys: ["T"], shift: false, title: "Panel de plantillas"),
         ShortcutLegendEntry(keys: ["←", "→"], shift: false, title: "Página anterior / siguiente", usesCommand: true),
         ShortcutLegendEntry(keys: ["←", "→"], shift: true, title: "Mover ventana a la página anterior / siguiente", usesCommand: true),
+        ShortcutLegendEntry(keys: ["←", "→"], shift: false, title: "Zona anterior / siguiente", usesCommand: true, withControl: true),
+        ShortcutLegendEntry(keys: ["←", "→"], shift: true, title: "Mover ventana a la zona anterior / siguiente", usesCommand: true, withControl: true),
     ]
 
     public static func line(for entry: ShortcutLegendEntry, style: KeyboardStyle) -> String {
         let modifiers: String
         switch style {
         case .windows:
-            let base = entry.usesCommand ? "Win+Alt+" : "Ctrl+Alt+"
+            let base = entry.usesCommand ? (entry.withControl ? "Ctrl+Alt+Win+" : "Win+Alt+") : "Ctrl+Alt+"
             modifiers = entry.shift ? base + "Shift+" : base
         case .mac:
-            let base = entry.usesCommand ? "⌘⌥" : "⌃⌥"
+            let base = entry.usesCommand ? (entry.withControl ? "⌃⌥⌘" : "⌘⌥") : "⌃⌥"
             modifiers = entry.shift ? base + "⇧" : base
         }
         return "\(modifiers)\(entry.keys.joined(separator: " / "))  ·  \(entry.title)"
