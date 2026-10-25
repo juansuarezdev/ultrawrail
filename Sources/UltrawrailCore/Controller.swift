@@ -95,11 +95,15 @@ public final class Controller {
     private let now: @MainActor () -> TimeInterval
     private let echoSuppression: TimeInterval
     private var suppressFocusEchoUntil: TimeInterval = 0
+    /// Window the Controller focused last; its own echo is never suppressed.
+    private var lastFocusRequest: WindowID?
     private var needsClamp = false
     private var lastApplied: [WindowID: CGRect] = [:]
     private var animationTargets: [WindowID: CGRect] = [:]
     private var failures: [WindowID: Int] = [:]
     private var pending: [WindowID: WindowInfo] = [:]
+    /// Parking writes that failed without dropping the window; retried on every relayout.
+    private var failedParks: [WindowID: CGRect] = [:]
     private var pendingFocus: WindowID?
     private var lastSnapshot: WorkspaceSnapshot?
     private static let maxFailures = 3
@@ -137,8 +141,14 @@ public final class Controller {
 
     /// Focuses a window and ignores the AX echo of that focus for a short while.
     private func focusWindow(_ id: WindowID) {
-        suppressFocusEchoUntil = now() + echoSuppression
+        suppressFocusEcho()
+        lastFocusRequest = id
         windows.focus(id)
+    }
+
+    private func suppressFocusEcho() {
+        suppressFocusEchoUntil = now() + echoSuppression
+        lastFocusRequest = nil
     }
 
     public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
@@ -223,6 +233,7 @@ public final class Controller {
                     switchPage(to: page)
                     return
                 }
+                if now() < suppressFocusEchoUntil, id != lastFocusRequest { return }
                 focusedZone = zone
                 switchedZone = true
             }
@@ -249,7 +260,7 @@ public final class Controller {
         let full = windows.usableFrame()
         for id in allPageWindows where !windows.isAlive(id) { forget(id) }
         var changed: [WindowID: CGRect] = [:]
-        var animated: [WindowID: CGRect] = [:]
+        var candidates: [AnimationCandidate] = []
         for zone in zones.indices {
             let viewport = zoneViewport(zone, in: full)
             let page = zones[zone].currentPage
@@ -257,18 +268,25 @@ public final class Controller {
             if needsClamp {
                 Layout.removeOverscroll(&zones[zone].pages[page], viewport: viewport, config: config)
             }
-            let targets = Layout.frames(zones[zone].pages[page], viewport: viewport, config: config)
+            let targets = Layout.frames(zones[zone].pages[page], viewport: viewport, config: config,
+                                        parkingBounds: full)
             let zoneChanged = targets.filter { lastApplied[$0.key] != $0.value }
             changed.merge(zoneChanged) { $1 }
-            animated.merge(animatedSubset(of: zoneChanged, in: zones[zone].pages[page], viewport: viewport)) { $1 }
+            candidates += animationCandidates(of: zoneChanged, in: zones[zone].pages[page],
+                                              viewport: viewport, full: full)
         }
         needsClamp = false
+        let animated = animatedSubset(of: candidates)
 
         var dropped = false
         for (id, rect) in changed.sorted(by: { $0.key.rawValue < $1.key.rawValue }) where animated[id] == nil {
             if !write(rect, to: id) { dropped = true }
         }
-        if force, !parkInactivePages(sizes: sizes, full: full) { dropped = true }
+        if force {
+            if !parkInactivePages(sizes: sizes, full: full) { dropped = true }
+        } else if !retryFailedParks() {
+            dropped = true
+        }
         if dropped {
             relayout()
             return
@@ -279,10 +297,16 @@ public final class Controller {
 
     // MARK: Zones
 
-    /// Zone `index` covers an equal-width vertical slice of `full`.
+    /// Zone `index` covers an equal-width vertical slice of `full`. Inner edges are rounded to
+    /// whole pixels, so neighbours share the same edge and the widths add up to `full.width`.
     private func zoneViewport(_ index: Int, in full: CGRect) -> CGRect {
-        let width = full.width / CGFloat(zones.count)
-        return CGRect(x: full.minX + CGFloat(index) * width, y: full.minY, width: width, height: full.height)
+        func edge(_ i: Int) -> CGFloat {
+            if i == 0 { return full.minX }
+            if i == zones.count { return full.maxX }
+            return (full.minX + full.width * CGFloat(i) / CGFloat(zones.count)).rounded()
+        }
+        let (minX, maxX) = (edge(index), edge(index + 1))
+        return CGRect(x: minX, y: full.minY, width: maxX - minX, height: full.height)
     }
 
     private func focusedViewport() -> CGRect { zoneViewport(focusedZone, in: windows.usableFrame()) }
@@ -316,6 +340,7 @@ public final class Controller {
     private func focusZone(_ target: Int) {
         guard zones.indices.contains(target), target != focusedZone else { return }
         focusedZone = target
+        suppressFocusEcho()
         relayout()
         focusCurrent()
     }
@@ -370,24 +395,42 @@ public final class Controller {
 
     // MARK: Animation
 
-    /// Windows that slide: same size, same y, not parked in both positions;
-    /// at most `maxAnimated`, nearest to the focused column first.
-    private func animatedSubset(of changed: [WindowID: CGRect], in strip: Workspace,
-                                viewport: CGRect) -> [WindowID: CGRect] {
-        guard animator != nil, motion.duration(reduceMotion: reduceMotion()) > 0 else { return [:] }
-        let candidates = changed.filter { id, target in
-            guard let from = lastApplied[id] else { return false }
-            return from.size == target.size
-                && abs(from.minY - target.minY) < 0.5
-                && !(isOffscreen(from, in: viewport) && isOffscreen(target, in: viewport))
+    private struct AnimationCandidate {
+        let id: WindowID
+        let target: CGRect
+        let distance: Int
+    }
+
+    /// Windows of one zone that may slide: same size, same y, not parked in both positions,
+    /// and never sweeping over another zone's slice on the way to or from parking.
+    private func animationCandidates(of changed: [WindowID: CGRect], in strip: Workspace,
+                                     viewport: CGRect, full: CGRect) -> [AnimationCandidate] {
+        guard animator != nil, motion.duration(reduceMotion: reduceMotion()) > 0 else { return [] }
+        return changed.compactMap { id, target in
+            guard let from = lastApplied[id],
+                  from.size == target.size,
+                  abs(from.minY - target.minY) < 0.5,
+                  !(isOffscreen(from, in: viewport) && isOffscreen(target, in: viewport)),
+                  staysInZone(from, target, viewport: viewport, full: full) else { return nil }
+            return AnimationCandidate(id: id, target: target,
+                                      distance: columnDistance(id, in: strip, from: strip.focusedColumn))
         }
-        let focused = strip.focusedColumn
-        let ranked = candidates.keys.sorted { lhs, rhs in
-            let (left, right) = (columnDistance(lhs, in: strip, from: focused),
-                                 columnDistance(rhs, in: strip, from: focused))
-            return left != right ? left < right : lhs.rawValue < rhs.rawValue
+    }
+
+    /// At most `maxAnimated` candidates across all zones, nearest to their zone's focused column first.
+    private func animatedSubset(of candidates: [AnimationCandidate]) -> [WindowID: CGRect] {
+        let ranked = candidates.sorted { lhs, rhs in
+            lhs.distance != rhs.distance ? lhs.distance < rhs.distance : lhs.id.rawValue < rhs.id.rawValue
         }
-        return Dictionary(uniqueKeysWithValues: ranked.prefix(Self.maxAnimated).map { ($0, candidates[$0]!) })
+        return Dictionary(uniqueKeysWithValues: ranked.prefix(Self.maxAnimated).map { ($0.id, $0.target) })
+    }
+
+    /// True when the visible part of the slide from `from` to `to` stays inside the zone's slice.
+    /// Always true with one zone, where the slice is the whole display.
+    private func staysInZone(_ from: CGRect, _ to: CGRect, viewport: CGRect, full: CGRect) -> Bool {
+        let minX = max(min(from.minX, to.minX), full.minX)
+        let maxX = min(max(from.maxX, to.maxX), full.maxX)
+        return minX >= viewport.minX - 1 && maxX <= viewport.maxX + 1
     }
 
     private func startAnimation(_ animated: [WindowID: CGRect]) {
@@ -458,7 +501,7 @@ public final class Controller {
     private func switchPage(to target: Int) {
         animator?.cancel()
         currentPage = target
-        suppressFocusEchoUntil = now() + echoSuppression
+        suppressFocusEcho()
         while pages.count > 1, pages.count - 1 != currentPage, pages[pages.count - 1].allWindows.isEmpty {
             pages.removeLast()
         }
@@ -469,16 +512,40 @@ public final class Controller {
     /// Returns false when some window was dropped after repeated failures.
     private func parkInactivePages(sizes: [WindowID: CGSize], full: CGRect) -> Bool {
         var ok = true
+        let previous = failedParks
+        failedParks.removeAll()
         for (zone, value) in zones.enumerated() {
             let viewport = zoneViewport(zone, in: full)
             for (index, page) in value.pages.enumerated() where index != value.currentPage {
                 for id in page.allWindows {
-                    let size = sizes[id]
+                    let size = sizes[id] ?? previous[id]?.size
                     let rect = CGRect(x: full.maxX - 1, y: viewport.minY,
                                       width: size?.width ?? 200, height: size?.height ?? viewport.height)
-                    if !write(rect, to: id) { ok = false }
+                    if !park(rect, id) { ok = false }
                 }
             }
+        }
+        return ok
+    }
+
+    /// Writes a parking rect, remembering it for a retry when the write fails.
+    /// Returns false when the window was dropped after repeated failures.
+    private func park(_ rect: CGRect, _ id: WindowID) -> Bool {
+        if windows.setFrame(rect, for: id, moveOnly: false) {
+            lastApplied[id] = rect
+            failures[id] = nil
+            failedParks[id] = nil
+            return true
+        }
+        failedParks[id] = rect
+        return !registerFailure(id)
+    }
+
+    /// Retries parking writes that failed earlier. Returns false when some window was dropped.
+    private func retryFailedParks() -> Bool {
+        var ok = true
+        for (id, rect) in failedParks.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
+            if !park(rect, id) { ok = false }
         }
         return ok
     }
@@ -489,7 +556,7 @@ public final class Controller {
         for (zone, value) in zones.enumerated() {
             let viewport = zoneViewport(zone, in: full)
             for (index, page) in value.pages.enumerated() where index != value.currentPage {
-                for (id, rect) in Layout.frames(page, viewport: viewport, config: config) {
+                for (id, rect) in Layout.frames(page, viewport: viewport, config: config, parkingBounds: full) {
                     _ = windows.setFrame(rect, for: id, moveOnly: false)
                 }
             }
@@ -514,6 +581,7 @@ public final class Controller {
         }
         lastApplied[id] = nil
         failures[id] = nil
+        failedParks[id] = nil
         needsClamp = true
     }
 }
