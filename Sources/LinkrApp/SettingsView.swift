@@ -46,16 +46,28 @@ private struct GeneralTab: View {
 
 private struct LayoutTab: View {
     @ObservedObject var model: SettingsModel
+    @State private var gapDraft: Double
+    @State private var outerGapDraft: Double
+
+    init(model: SettingsModel) {
+        self.model = model
+        _gapDraft = State(initialValue: model.gap)
+        _outerGapDraft = State(initialValue: model.outerGap)
+    }
 
     var body: some View {
         Form {
             VStack(alignment: .leading) {
-                Text("Hueco entre ventanas: \(Int(model.gap)) px")
-                Slider(value: $model.gap, in: 0...40, step: 1)
+                Text("Hueco entre ventanas: \(Int(gapDraft)) px")
+                Slider(value: $gapDraft, in: 0...40, step: 1) { editing in
+                    if !editing { model.gap = gapDraft }
+                }
             }
             VStack(alignment: .leading) {
-                Text("Margen exterior: \(Int(model.outerGap)) px")
-                Slider(value: $model.outerGap, in: 0...60, step: 1)
+                Text("Margen exterior: \(Int(outerGapDraft)) px")
+                Slider(value: $outerGapDraft, in: 0...60, step: 1) { editing in
+                    if !editing { model.outerGap = outerGapDraft }
+                }
             }
             Picker("Ancho de las columnas nuevas", selection: $model.newColumnWidth) {
                 ForEach(WidthPreset.all, id: \.self) { width in
@@ -65,6 +77,8 @@ private struct LayoutTab: View {
             Button("Restaurar valores") { model.restoreLayoutDefaults() }
         }
         .formStyle(.grouped)
+        .onChange(of: model.gap) { gapDraft = $0 }
+        .onChange(of: model.outerGap) { outerGapDraft = $0 }
     }
 }
 
