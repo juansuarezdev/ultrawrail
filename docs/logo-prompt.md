@@ -1,79 +1,21 @@
-# Prompt de logo e icono: Ultrawrail
+# Prompts de logo: Ultrawrail
 
-Prompt listo para pegar en una herramienta de diseño o de generación de imágenes. Sustituye `[VARIANTE]` por A, B o C (ver abajo).
+Copia y pega cada bloque tal cual. No hay variables que rellenar.
 
----
+## 1. Icono de la app
 
-## Prompt principal
+```
+macOS app icon for "Ultrawrail", a window manager for ultrawide monitors. Square 1024x1024 canvas with the standard macOS Big Sur squircle shape, transparent background outside the squircle. Inside: a deep blue-to-indigo diagonal gradient background (#1B2A6B to #0E131F). Centered, a horizontal strip of four tall rounded rectangles (window panes) side by side with thin even gaps, each a different width: the second pane from the left is wider and glows bright blue (#2F6BFF to #7AA2FF), the other three are frosted slate-blue glass (#3A4663, soft inner light on the top edge). The outer two panes are cropped by the edges of the icon, as if the strip keeps going beyond the frame. Under the panes runs a thin continuous rounded horizontal rail bar in turquoise (#00C2A8) that spans the whole width of the icon, with a soft glow. Subtle soft shadow under the panes, thin white highlight along the top edge of the squircle, clean geometric flat-vector style with gentle depth, consistent rounded corners. Must stay readable at 16px: few shapes, high contrast. No text, no letters, no logos, no trademarks, no people, no photo, no window title bars, no traffic-light buttons, no train tracks, no scrollbar look. Centered composition, front view, no perspective.
+```
 
-Diseña el icono de aplicación de **Ultrawrail**, un gestor de ventanas nativo para macOS que vive en la barra de menús. Ultrawrail organiza las ventanas en **columnas sobre una tira horizontal que se desplaza** (scrolling window manager, al estilo de niri o PaperWM) y está pensado también para monitores ultrawide: la tira se extiende más allá de los bordes de la pantalla y el foco la desliza.
+## 2. Icono de la barra de menús
 
-### Concepto visual
+```
+macOS menu bar template icon, 18x18 pt (export 18, 36 and 54 px), pure black on fully transparent background, no gradients, no shadows, no partial transparency. Simple glyph: three tall rounded vertical rectangles side by side with thin even gaps, the middle one wider, the outer two cropped by the edges of the canvas, above one thin continuous horizontal rounded bar (a rail) running the full width. Solid fills, minimum stroke 1.5 pt, glyph about 16 pt tall, geometric, must be legible at 18 px. No text, no outline, no color.
+```
 
-- Una **tira horizontal de 3 a 4 paneles verticales** (columnas) de distinto ancho, alineados lado a lado con huecos finos y regulares entre ellos.
-- **Sensación de desplazamiento:** los paneles de los extremos quedan cortados por el borde del icono, como si la tira continuara fuera del encuadre. Un panel central, algo más ancho, es el "enfocado" y destaca en color.
-- **Carril ("rail"):** bajo los paneles corre un **carril** fino y continuo, una barra horizontal redondeada que atraviesa todo el icono de lado a lado y por la que los paneles se deslizan. El nombre es *pane* (panel de ventana) + *rail* (carril): el icono debe leerse como "paneles sobre un riel", sin parecer una vía de tren literal ni una barra de desplazamiento.
-- Composición horizontal, centrada, con un ligero desplazamiento hacia la derecha para sugerir movimiento.
+## Entrega
 
-### Estilo
-
-- macOS Big Sur o posterior: base en **squircle** (superelipse continua, no rectángulo con esquinas redondeadas simples) sobre una cuadrícula de 1024 px con el margen estándar de icono de macOS.
-- Profundidad sutil: una sombra suave bajo los paneles, un brillo fino en el borde superior y un degradado muy ligero. Nada de relieves exagerados ni biselados.
-- Formas geométricas limpias, esquinas redondeadas coherentes, trazo uniforme.
-
-### Paleta propuesta
-
-| Rol | Modo claro | Modo oscuro |
-|-----|------------|-------------|
-| Fondo del squircle (degradado) | `#F4F7FB` a `#DCE4F0` | `#1B2233` a `#0E131F` |
-| Paneles secundarios | `#B8C4D9` | `#3A4663` |
-| Panel enfocado | `#2F6BFF` a `#5B8CFF` | `#4D83FF` a `#7AA2FF` |
-| Carril | `#00C2A8` | `#2EE6C8` |
-| Brillo de borde | `#FFFFFF` al 70 % | `#FFFFFF` al 18 % |
-| Sombra | `#0B1B3A` al 20 % | `#000000` al 45 % |
-
-Acento principal: azul `#2F6BFF`. Acento del carril: turquesa `#00C2A8`.
-
-### Tres direcciones (elige una con [VARIANTE])
-
-**A. Minimalista.** Fondo plano claro u oscuro del squircle, tres paneles planos (dos grises, uno azul) sobre un único carril turquesa. Sin degradados salvo una sombra muy tenue. Máxima claridad.
-
-**B. Gradiente.** Fondo con degradado diagonal profundo (azul a violeta azulado: `#1F3FD6` a `#6B4BFF` en oscuro, `#7FA6FF` a `#C9B8FF` en claro). Paneles de vidrio esmerilado semitransparente con borde de luz fino; el panel enfocado más luminoso. Profundidad suave tipo Big Sur.
-
-**C. Glifo monocromo.** Un solo color (blanco sobre azul `#2F6BFF`, o azul sobre blanco) con los paneles y el carril como una única silueta de glifo, sin degradados ni sombras. Pensado para sobrevivir a cualquier tamaño y servir de base al icono de la barra de menús.
-
-### Restricciones
-
-- Debe leerse con claridad a **16 px**: pocas formas, contraste alto, sin detalles finos que desaparezcan.
-- **Sin texto, sin letras ni la palabra "Ultrawrail"** dentro del icono.
-- **Sin marcas, logos ni elementos reconocibles de terceros** (no Apple, no niri, no PaperWM, no iconos de otros gestores de ventanas).
-- **Fondo transparente** fuera del squircle (canal alfa limpio, sin cuadro blanco ni sombra recortada).
-- Sin fotografías, sin personas, sin mascotas.
-
-### Versión para la barra de menús
-
-Genera además un glifo **template image monocromo** para la barra de menús de macOS:
-
-- Un solo color: **negro puro sobre fondo transparente** (macOS lo tiñe según el tema claro u oscuro).
-- Lienzo de **18 pt** (18x18 @1x, 36x36 @2x, 54x54 @3x), con el glifo ocupando unos 16 pt.
-- Silueta simple: tres columnas verticales de distinto ancho, la central algo más ancha, sobre una línea de carril horizontal inferior. Los paneles de los extremos cortados por el borde para sugerir la tira.
-- Trazo o relleno de al menos 1,5 pt, sin degradados, sin transparencias parciales, sin sombras.
-- Nombre de archivo sugerido: `MenuBarIconTemplate` (el sufijo "Template" marca el modo plantilla).
-
-### Entrega
-
-- **Icono de app:** PNG de **1024 x 1024 px**, sRGB, con canal alfa, squircle ya aplicado o cuadrado completo según la herramienta (indícalo).
-- **Set completo `.icns` / AppIconSet** (`AppIcon.appiconset`) con los tamaños de macOS: 16, 32, 64, 128, 256, 512 y 1024 px, en 1x y 2x:
-  `16@1x, 16@2x(32), 32@1x, 32@2x(64), 128@1x, 128@2x(256), 256@1x, 256@2x(512), 512@1x, 512@2x(1024)`.
-- **Menú:** `MenuBarIconTemplate.png` (18 px), `@2x` (36 px) y `@3x` (54 px), negro sobre transparente.
-- Entrega también las versiones en modo claro y oscuro del icono principal si la herramienta lo permite.
-
-### Evitar
-
-- Texto, monogramas o la letra "L" dibujada.
-- Vías de tren literales, cadenas, candados o eslabones, y barras de desplazamiento tipo scrollbar.
-- Capturas de ventanas reales, semáforos de macOS (rojo, amarillo, verde) o barras de título.
-- Degradados chillones, neones, brillos de cristal estilo 2008, sombras duras.
-- Demasiados paneles (más de 4) o detalles que se pierdan a 16 px.
-- Parecido con iconos de Apple (Mission Control, Stage Manager) u otros gestores de ventanas.
-- Fondo blanco opaco o sombra exterior recortada en el PNG.
+- Icono de la app: PNG 1024 x 1024, sRGB, con transparencia. Después genera el set `.icns` con los tamaños 16, 32, 64, 128, 256, 512 y 1024 px (1x y 2x).
+- Icono de menú: `MenuBarIconTemplate.png` (18 px), `@2x` (36 px) y `@3x` (54 px). El sufijo `Template` hace que macOS lo tiña según el tema claro u oscuro.
+- Si la herramienta ignora la transparencia o dibuja el squircle por su cuenta, pide solo el motivo (paneles y carril) sobre fondo liso y aplica la máscara de macOS después.
