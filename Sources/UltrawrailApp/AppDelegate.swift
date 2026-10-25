@@ -19,13 +19,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
+    private func menuBarImage() -> NSImage? {
+        let image = NSImage(named: "MenuBarIconTemplate")
+            ?? NSImage(systemSymbolName: "rectangle.split.3x1", accessibilityDescription: nil)
+        image?.size = NSSize(width: 18, height: 18)
+        image?.isTemplate = true
+        image?.accessibilityDescription = "Ultrawrail"
+        return image
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onChange = { [weak self] in self?.settingsChanged() }
         settingsWindow = SettingsWindowController(model: model)
-        statusItem.button?.image = NSImage(
-            systemSymbolName: "rectangle.split.3x1",
-            accessibilityDescription: "Ultrawrail"
-        )
+        statusItem.button?.image = menuBarImage()
         if AXIsProcessTrusted() {
             startController()
         } else {

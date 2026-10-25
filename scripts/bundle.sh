@@ -15,6 +15,8 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 cp ".build/$CONFIG/UltrawrailApp" "$APP/Contents/MacOS/Ultrawrail"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+mkdir -p "$APP/Contents/Resources"
+cp Resources/AppIcon.icns Resources/MenuBarIconTemplate*.png "$APP/Contents/Resources/"
 codesign --force --sign "$IDENTITY" --identifier dev.ultrawrail.app "$APP"
 
 echo "Built $APP"
