@@ -264,7 +264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             pageLineItem?.isHidden = true
             return
         }
-        pageLineItem?.title = "Página \(snapshot.page) de \(snapshot.pageCount)"
+        pageLineItem?.title = "Página \(snapshot.page + 1) de \(snapshot.pageCount)"
         pageLineItem?.isHidden = false
     }
 
