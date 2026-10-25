@@ -1,4 +1,5 @@
 import Foundation
+import LayoutEngine
 
 struct LayoutSettings: Equatable {
     var gap: Double = 8
@@ -14,7 +15,9 @@ struct LayoutSettingsStore {
             var value = LayoutSettings()
             if let gap = defaults.object(forKey: "gap") as? Double { value.gap = min(40, max(0, gap)) }
             if let outer = defaults.object(forKey: "outerGap") as? Double { value.outerGap = min(60, max(0, outer)) }
-            if let width = defaults.object(forKey: "newColumnWidth") as? Double { value.newColumnWidth = width }
+            if let width = defaults.object(forKey: "newColumnWidth") as? Double {
+                value.newColumnWidth = WidthPreset.all.min { abs($0 - width) < abs($1 - width) } ?? value.newColumnWidth
+            }
             return value
         }
         nonmutating set {
