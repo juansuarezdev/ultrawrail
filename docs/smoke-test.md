@@ -81,6 +81,14 @@ Pasos adicionales:
 6. Las plantillas propias salen en Ctrl+Alt+T tras las de serie; con muchas, las tarjetas se desplazan con la rueda.
 7. Cerrar y reabrir Linkr conserva las plantillas propias; "Borrar" las quita.
 
+## Ultrawide
+
+1. "Seguimiento del foco: Centrado" mantiene la columna con foco en el centro de la pantalla, salvo en los extremos.
+2. "Ancho máximo de columna" recorta las columnas a N px; en 0 muestra "sin límite".
+3. "Centrar el grupo si cabe en pantalla" coloca 2 columnas de 25 % en el centro de la pantalla.
+4. "Restaurar valores" desactiva las tres opciones.
+5. Las tres opciones persisten al cerrar y reabrir Linkr.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

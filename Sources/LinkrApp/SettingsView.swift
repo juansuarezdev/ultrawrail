@@ -50,11 +50,13 @@ private struct LayoutTab: View {
     @ObservedObject var model: SettingsModel
     @State private var gapDraft: Double
     @State private var outerGapDraft: Double
+    @State private var maxWidthDraft: Double
 
     init(model: SettingsModel) {
         self.model = model
         _gapDraft = State(initialValue: model.gap)
         _outerGapDraft = State(initialValue: model.outerGap)
+        _maxWidthDraft = State(initialValue: model.maxColumnWidth)
     }
 
     var body: some View {
@@ -76,11 +78,28 @@ private struct LayoutTab: View {
                     Text("\(Int((width * 100).rounded())) %").tag(width)
                 }
             }
+            Section {
+                Picker("Seguimiento del foco", selection: $model.focusMode) {
+                    Text("Mínimo").tag(FocusMode.minimal)
+                    Text("Centrado").tag(FocusMode.centered)
+                }
+                Toggle("Centrar el grupo si cabe en pantalla", isOn: $model.centerStrip)
+                VStack(alignment: .leading) {
+                    Text(maxWidthDraft == 0 ? "Ancho máximo de columna: sin límite"
+                                            : "Ancho máximo de columna: \(Int(maxWidthDraft)) px")
+                    Slider(value: $maxWidthDraft, in: 0...5000, step: 100) { editing in
+                        if !editing { model.maxColumnWidth = maxWidthDraft }
+                    }
+                }
+            } footer: {
+                Text("Pensado para monitores ultrawide.")
+            }
             Button("Restaurar valores") { model.restoreLayoutDefaults() }
         }
         .formStyle(.grouped)
         .onChange(of: model.gap) { gapDraft = $0 }
         .onChange(of: model.outerGap) { outerGapDraft = $0 }
+        .onChange(of: model.maxColumnWidth) { maxWidthDraft = $0 }
     }
 }
 
