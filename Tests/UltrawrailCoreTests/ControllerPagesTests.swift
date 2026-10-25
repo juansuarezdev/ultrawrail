@@ -7,10 +7,13 @@ import LayoutEngine
 final class ControllerPagesTests: XCTestCase {
     let config = LayoutConfig(gap: 10, outerGap: 10)
 
+    var clock: Double = 0
+
     func make(_ ids: [Int]) -> (Controller, FakeWindows) {
         let windows = FakeWindows()
         for id in ids { windows.add(id) }
-        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: config)
+        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: config,
+                                    now: { [unowned self] in self.clock })
         controller.start()
         return (controller, windows)
     }
@@ -102,6 +105,7 @@ final class ControllerPagesTests: XCTestCase {
         c.handle(.nextPage)
         open(2, w)
         c.handle(.previousPage)
+        clock += 1
         w.onEvent?(.focused(WindowID(2)))
         XCTAssertEqual(c.currentPage, 1)
         XCTAssertEqual(c.workspace.focusedWindow, WindowID(2))
@@ -139,5 +143,83 @@ final class ControllerPagesTests: XCTestCase {
         c.handle(.nextPage)
         XCTAssertEqual(last?.page, 1)
         XCTAssertEqual(last?.pageCount, 2)
+    }
+
+    func testParkingFailuresDropWindow() {
+        let (c, w) = make([1, 2])
+        w.failing = [1]
+        c.handle(.nextPage)
+        c.screenChanged()
+        c.screenChanged()
+        XCTAssertEqual(c.pages[0].allWindows, [WindowID(2)])
+    }
+
+    func testScreenChangedReparksInactivePages() {
+        let (c, w) = make([1, 2])
+        c.handle(.nextPage)
+        open(3, w)
+        let size = w.lastRect(1)!.size
+        w.frame = CGRect(x: 0, y: 0, width: 1200, height: 800)
+        c.screenChanged()
+        XCTAssertEqual(w.lastRect(1)?.minX, 1199)
+        XCTAssertEqual(w.lastRect(2)?.minX, 1199)
+        XCTAssertEqual(w.lastRect(1)?.size, size)
+        XCTAssertNotEqual(w.lastRect(3)?.minX, 1199)
+    }
+
+    func testFocusEchoRightAfterSwitchIsIgnoredUntilSuppressionExpires() {
+        let (c, w) = make([1])
+        c.handle(.nextPage)
+        open(2, w)
+        c.handle(.previousPage)
+        w.onEvent?(.focused(WindowID(2)))
+        XCTAssertEqual(c.currentPage, 0)
+        clock += 0.5
+        w.onEvent?(.focused(WindowID(2)))
+        XCTAssertEqual(c.currentPage, 1)
+    }
+
+    func testRestoreParkedWindowsUsesOwnPageLayout() {
+        let (c, w) = make([1, 2])
+        c.handle(.nextPage)
+        open(3, w)
+        XCTAssertEqual(w.lastRect(1)?.minX, 999)
+        let expected = Layout.frames(c.pages[0], viewport: w.frame, config: config)
+        c.restoreParkedWindows()
+        XCTAssertEqual(w.lastRect(1), expected[WindowID(1)])
+        XCTAssertEqual(w.lastRect(2), expected[WindowID(2)])
+        XCTAssertNotEqual(w.lastRect(1)?.minX, 999)
+    }
+
+    func testRepeatedOpenedDoesNotDuplicateAcrossPages() {
+        let (c, w) = make([1])
+        c.handle(.nextPage)
+        open(2, w)
+        c.handle(.previousPage)
+        let info = WindowInfo(id: WindowID(2), isManageable: true)
+        w.onEvent?(.opened(info))
+        XCTAssertEqual(c.pages[0].allWindows, [WindowID(1)])
+        XCTAssertEqual(c.pages[1].allWindows, [WindowID(2)])
+        c.placement = .manual
+        w.onEvent?(.opened(info))
+        XCTAssertEqual(c.pendingCount, 0)
+    }
+
+    func testNewColumnWidthAppliesToAllPages() {
+        let (c, _) = make([1])
+        c.handle(.nextPage)
+        c.newColumnWidth = 0.7
+        XCTAssertTrue(c.pages.allSatisfy { $0.newColumnWidth == 0.7 })
+    }
+
+    func testApplyTemplateWithWindowsFromOtherPageIsNoOp() {
+        let (c, w) = make([1, 2])
+        c.handle(.nextPage)
+        open(3, w)
+        let before = c.pages
+        let calls = w.setFrameCalls.count
+        c.applyTemplate(Template.builtIn[0], assignment: [WindowID(1), WindowID(3)])
+        XCTAssertEqual(c.pages, before)
+        XCTAssertEqual(w.setFrameCalls.count, calls)
     }
 }

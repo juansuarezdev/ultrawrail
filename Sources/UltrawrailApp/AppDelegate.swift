@@ -110,6 +110,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.open(url)
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        controller?.restoreParkedWindows()
+    }
+
     // MARK: Controller
 
     private func startController() {

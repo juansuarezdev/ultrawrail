@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import LayoutEngine
 
 public struct WorkspaceSnapshot: Equatable, Sendable {
@@ -50,10 +51,13 @@ public final class Controller {
     }
     public var newColumnWidth: Double {
         get { workspace.newColumnWidth }
-        set { workspace.newColumnWidth = newValue }
+        set { for index in pages.indices { pages[index].newColumnWidth = newValue } }
     }
     private let animator: Animator?
     private let reduceMotion: () -> Bool
+    private let now: @MainActor () -> TimeInterval
+    private let echoSuppression: TimeInterval
+    private var suppressFocusEchoUntil: TimeInterval = 0
     private var needsClamp = false
     private var lastApplied: [WindowID: CGRect] = [:]
     private var animationTargets: [WindowID: CGRect] = [:]
@@ -69,8 +73,12 @@ public final class Controller {
         hotkeys: HotkeyService,
         config: LayoutConfig = LayoutConfig(),
         animator: Animator? = nil,
-        reduceMotion: @escaping () -> Bool = { false }
+        reduceMotion: @escaping () -> Bool = { false },
+        now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+        echoSuppression: TimeInterval = 0.4
     ) {
+        self.now = now
+        self.echoSuppression = echoSuppression
         self.windows = windows
         self.hotkeys = hotkeys
         self.config = config
@@ -90,17 +98,25 @@ public final class Controller {
         relayout()
     }
 
+    /// Focuses a window and ignores the AX echo of that focus for a short while.
+    private func focusWindow(_ id: WindowID) {
+        suppressFocusEchoUntil = now() + echoSuppression
+        windows.focus(id)
+    }
+
     public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
 
     /// Gives keyboard focus back to the focused window (used when a panel closes without changes).
     public func refocus() {
-        if let id = workspace.focusedWindow { windows.focus(id) }
+        if let id = workspace.focusedWindow { focusWindow(id) }
     }
 
     public func applyTemplate(_ template: Template, assignment: [WindowID?]) {
+        let onPage = Set(workspace.allWindows)
+        guard assignment.allSatisfy({ $0.map(onPage.contains) ?? true }) else { return }
         workspace.apply(template, assignment: assignment, viewport: windows.usableFrame(), config: config)
         relayout()
-        if let id = workspace.focusedWindow { windows.focus(id) }
+        if let id = workspace.focusedWindow { focusWindow(id) }
     }
 
     public func handle(_ command: Command) {
@@ -124,13 +140,13 @@ public final class Controller {
         }
         workspace.perform(command, viewport: windows.usableFrame(), config: config)
         relayout()
-        if let id = workspace.focusedWindow { windows.focus(id) }
+        if let id = workspace.focusedWindow { focusWindow(id) }
     }
 
     public func handle(_ event: WindowEvent) {
         switch event {
         case .opened(let info):
-            if placement == .manual, info.isManageable, !workspace.contains(info.id) {
+            if placement == .manual, info.isManageable, !allPageWindows.contains(info.id) {
                 pending[info.id] = info
                 pendingFocus = info.id
                 return
@@ -150,6 +166,7 @@ public final class Controller {
                 return
             }
             if !workspace.contains(id), let index = pages.firstIndex(where: { $0.contains(id) }) {
+                if now() < suppressFocusEchoUntil { return }
                 pages[index].focus(window: id)
                 switchPage(to: index)
                 return
@@ -169,7 +186,11 @@ public final class Controller {
 
     public func relayout(force: Bool = false) {
         animator?.cancel()
-        if force { lastApplied.removeAll() }
+        var sizes: [WindowID: CGSize] = [:]
+        if force {
+            for (id, rect) in lastApplied { sizes[id] = rect.size }
+            lastApplied.removeAll()
+        }
         let viewport = windows.usableFrame()
         for id in allPageWindows where !windows.isAlive(id) { forget(id) }
         Layout.reveal(&workspace, viewport: viewport, config: config)
@@ -186,6 +207,7 @@ public final class Controller {
         for (id, rect) in changed.sorted(by: { $0.key.rawValue < $1.key.rawValue }) where animated[id] == nil {
             if !write(rect, to: id) { dropped = true }
         }
+        if force, !parkInactivePages(sizes: sizes, viewport: viewport) { dropped = true }
         if dropped {
             relayout()
             return
@@ -288,7 +310,7 @@ public final class Controller {
         guard windows.isAlive(id) else { return }
         adopt(info)
         relayout()
-        windows.focus(id)
+        focusWindow(id)
     }
 
     private func adoptAllPending() {
@@ -300,7 +322,7 @@ public final class Controller {
     }
 
     private func adopt(_ info: WindowInfo) {
-        guard info.isManageable else { return }
+        guard info.isManageable, !allPageWindows.contains(info.id) else { return }
         workspace.addWindow(info.id)
     }
 
@@ -318,20 +340,35 @@ public final class Controller {
 
     private func switchPage(to target: Int) {
         animator?.cancel()
-        var sizes: [WindowID: CGSize] = [:]
-        for id in allPageWindows { sizes[id] = lastApplied[id]?.size }
         currentPage = target
+        suppressFocusEchoUntil = now() + echoSuppression
         while pages.count > 1, pages.count - 1 != currentPage, pages[pages.count - 1].allWindows.isEmpty {
             pages.removeLast()
         }
         relayout(force: true)
-        let viewport = windows.usableFrame()
+    }
+
+    /// Moves every inactive page's windows off the right edge, keeping their size.
+    /// Returns false when some window was dropped after repeated failures.
+    private func parkInactivePages(sizes: [WindowID: CGSize], viewport: CGRect) -> Bool {
+        var ok = true
         for (index, page) in pages.enumerated() where index != currentPage {
             for id in page.allWindows {
-                let size = sizes[id] ?? nil
+                let size = sizes[id]
                 let rect = CGRect(x: viewport.maxX - 1, y: viewport.minY,
                                   width: size?.width ?? 200, height: size?.height ?? viewport.height)
-                if windows.setFrame(rect, for: id, moveOnly: false) { lastApplied[id] = rect }
+                if !write(rect, to: id) { ok = false }
+            }
+        }
+        return ok
+    }
+
+    /// Puts every inactive page's windows where its own layout would place them (used on quit).
+    public func restoreParkedWindows() {
+        let viewport = windows.usableFrame()
+        for (index, page) in pages.enumerated() where index != currentPage {
+            for (id, rect) in Layout.frames(page, viewport: viewport, config: config) {
+                _ = windows.setFrame(rect, for: id, moveOnly: false)
             }
         }
     }
@@ -341,11 +378,11 @@ public final class Controller {
         pages[target].addWindow(id)
         needsClamp = true
         switchPage(to: target)
-        windows.focus(id)
+        focusWindow(id)
     }
 
     private func focusCurrent() {
-        if let id = workspace.focusedWindow { windows.focus(id) }
+        if let id = workspace.focusedWindow { focusWindow(id) }
     }
 
     private func forget(_ id: WindowID) {
