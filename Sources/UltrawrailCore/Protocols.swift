@@ -15,9 +15,11 @@ public struct WindowInfo: Equatable, Sendable {
 public struct WindowDescription: Equatable, Sendable {
     public let appName: String
     public let pid: Int32
-    public init(appName: String, pid: Int32) {
+    public let bundleID: String?
+    public init(appName: String, pid: Int32, bundleID: String? = nil) {
         self.appName = appName
         self.pid = pid
+        self.bundleID = bundleID
     }
 }
 

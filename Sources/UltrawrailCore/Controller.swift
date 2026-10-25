@@ -67,6 +67,10 @@ public final class Controller {
     public var placement: PlacementMode = .automatic {
         didSet { if placement == .automatic, oldValue == .manual { adoptAllPending() } }
     }
+    /// Bundle identifiers of apps whose windows are never managed.
+    public var excludedApps: Set<String> = [] {
+        didSet { if excludedApps != oldValue { applyExclusionChange(from: oldValue) } }
+    }
     public var pendingCount: Int { pending.count }
     public var onShowTemplates: (() -> Void)?
     public var managedWindows: [WindowID] { workspace.allWindows }
@@ -205,7 +209,7 @@ public final class Controller {
     public func handle(_ event: WindowEvent) {
         switch event {
         case .opened(let info):
-            if placement == .manual, info.isManageable, !allPageWindows.contains(info.id) {
+            if placement == .manual, info.isManageable, !isExcluded(info.id), !allPageWindows.contains(info.id) {
                 pending[info.id] = info
                 pendingFocus = info.id
                 return
@@ -482,8 +486,26 @@ public final class Controller {
     }
 
     private func adopt(_ info: WindowInfo) {
-        guard info.isManageable, !allPageWindows.contains(info.id) else { return }
+        guard info.isManageable, !isExcluded(info.id), !allPageWindows.contains(info.id) else { return }
         workspace.addWindow(info.id)
+    }
+
+    private func isExcluded(_ id: WindowID) -> Bool {
+        guard !excludedApps.isEmpty, let bundleID = windows.describe(id)?.bundleID else { return false }
+        return excludedApps.contains(bundleID)
+    }
+
+    /// Forgets managed and pending windows of excluded apps (frames untouched) and adopts
+    /// manageable windows of apps that are allowed again into the focused page.
+    private func applyExclusionChange(from old: Set<String>) {
+        for id in allPageWindows where isExcluded(id) { forget(id) }
+        for id in pending.keys where isExcluded(id) { pending[id] = nil }
+        if let focus = pendingFocus, pending[focus] == nil { pendingFocus = nil }
+        for info in windows.allWindows() where !pending.keys.contains(info.id) {
+            guard let bundleID = windows.describe(info.id)?.bundleID, old.contains(bundleID) else { continue }
+            adopt(info)
+        }
+        relayout(force: true)
     }
 
     // MARK: Pages

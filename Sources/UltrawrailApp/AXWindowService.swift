@@ -89,8 +89,9 @@ final class AXWindowService: WindowService {
 
     func describe(_ id: WindowID) -> WindowDescription? {
         guard let entry = entries[id] else { return nil }
-        let name = NSRunningApplication(processIdentifier: entry.pid)?.localizedName ?? "App"
-        return WindowDescription(appName: name, pid: Int32(entry.pid))
+        let app = NSRunningApplication(processIdentifier: entry.pid)
+        return WindowDescription(appName: app?.localizedName ?? "App", pid: Int32(entry.pid),
+                                 bundleID: app?.bundleIdentifier)
     }
 
     func isAlive(_ id: WindowID) -> Bool {
