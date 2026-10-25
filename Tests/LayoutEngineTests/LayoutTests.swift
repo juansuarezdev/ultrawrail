@@ -53,6 +53,23 @@ final class LayoutTests: XCTestCase {
         XCTAssertEqual(frames[3], CGRect(x: 999, y: 10, width: 485, height: 780))
     }
 
+    func testParkingBoundsMoveOverflowColumnsToTheirEdges() {
+        let slice = CGRect(x: 500, y: 0, width: 500, height: 800)
+        let display = CGRect(x: 0, y: 0, width: 1000, height: 800)
+        var ws = makeWorkspace(3)
+        Layout.reveal(&ws, viewport: slice, config: config)
+        var frames = Layout.frames(ws, viewport: slice, config: config, parkingBounds: display)
+        XCTAssertEqual(frames[1], CGRect(x: -234, y: 10, width: 235, height: 780))
+        XCTAssertEqual(frames[3], CGRect(x: 755, y: 10, width: 235, height: 780))
+        XCTAssertEqual(Layout.frames(ws, viewport: slice, config: config)[1]?.minX, 266)
+        let left = CGRect(x: 0, y: 0, width: 500, height: 800)
+        ws.focus(window: 1)
+        Layout.reveal(&ws, viewport: left, config: config)
+        frames = Layout.frames(ws, viewport: left, config: config, parkingBounds: display)
+        XCTAssertEqual(frames[3]?.minX, 999)
+        XCTAssertEqual(Layout.frames(ws, viewport: left, config: config)[3]?.minX, 499)
+    }
+
     func testStackedWindowsSplitHeightEvenly() {
         var ws = makeWorkspace(2)
         ws.apply(.stackLeft)

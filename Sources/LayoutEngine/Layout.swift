@@ -74,17 +74,20 @@ public enum Layout {
     }
 
     /// Rect of every window in screen coordinates. Columns fully outside the
-    /// viewport are parked with 1 px still inside it.
-    public static func frames(_ ws: Workspace, viewport: CGRect, config: LayoutConfig) -> [WindowID: CGRect] {
+    /// viewport are parked with 1 px still inside `parkingBounds` (the viewport when nil),
+    /// so a zone's overflow columns go to the display edge instead of a neighbouring zone.
+    public static func frames(_ ws: Workspace, viewport: CGRect, config: LayoutConfig,
+                              parkingBounds: CGRect? = nil) -> [WindowID: CGRect] {
         let rects = stripRects(ws, viewport: viewport, config: config)
+        let bounds = parkingBounds ?? viewport
         var result: [WindowID: CGRect] = [:]
         for column in ws.columns {
             guard let first = column.windows.first, let base = rects[first] else { continue }
             var x = viewport.minX + base.minX - ws.scrollOffset
             if x + base.width <= viewport.minX {
-                x = viewport.minX - base.width + 1
+                x = bounds.minX - base.width + 1
             } else if x >= viewport.maxX {
-                x = viewport.maxX - 1
+                x = bounds.maxX - 1
             }
             for id in column.windows {
                 guard let rect = rects[id] else { continue }
