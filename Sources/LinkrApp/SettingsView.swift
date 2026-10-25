@@ -11,10 +11,12 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             LayoutTab(model: model)
                 .tabItem { Label("Diseño", systemImage: "rectangle.split.3x1") }
+            TemplatesTab(model: model)
+                .tabItem { Label("Plantillas", systemImage: "square.split.2x1") }
             ShortcutsTab(model: model)
                 .tabItem { Label("Atajos", systemImage: "keyboard") }
         }
-        .frame(width: 520, height: 420)
+        .frame(width: 760, height: 560)
     }
 }
 
