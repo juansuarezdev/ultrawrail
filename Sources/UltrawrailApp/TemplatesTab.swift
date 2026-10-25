@@ -112,11 +112,19 @@ struct TemplatesTab: View {
         Template.builtIn.contains { $0.id == template.id }
     }
 
+    /// Editing a built-in first creates a custom copy (as Duplicar does) and selects it.
+    private func editable(_ template: Template) -> Template {
+        guard isReadOnly(template) else { return template }
+        let copy = model.duplicate(template)
+        selectedId = copy.id
+        return copy
+    }
+
     private func mutate(_ template: Template, _ change: (inout TemplateDraft) -> Void) {
-        guard !isReadOnly(template) else { return }
-        var draft = TemplateDraft(columns: template.columns)
+        let target = editable(template)
+        var draft = TemplateDraft(columns: target.columns)
         change(&draft)
-        model.update(Template(id: template.id, name: template.name, columns: draft.columns))
+        model.update(Template(id: target.id, name: target.name, columns: draft.columns))
     }
 
     private func editor(for stored: Template) -> some View {
@@ -144,7 +152,7 @@ struct TemplatesTab: View {
                 } label: {
                     Label("Columna", systemImage: "plus")
                 }
-                .disabled(readOnly || t.columns.count >= TemplateDraft.maxColumns)
+                .disabled(t.columns.count >= TemplateDraft.maxColumns)
                 Text("\(t.columns.count) columnas · \(t.slotCount) huecos · suma 100 % de la pantalla")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -156,13 +164,15 @@ struct TemplatesTab: View {
         HStack {
             NameField(name: t.name) { newName in
                 let name = newName.trimmingCharacters(in: .whitespaces).isEmpty ? "Sin nombre" : newName
-                if name != t.name { model.update(Template(id: t.id, name: name, columns: t.columns)) }
+                // A stale field from a previous selection (e.g. after the copy was created) must not commit again.
+                guard selectedId == t.id, name != t.name else { return }
+                let target = editable(t)
+                model.update(Template(id: target.id, name: name, columns: target.columns))
             }
             .id(t.id)
-            .disabled(readOnly)
             .frame(maxWidth: 200)
             if readOnly {
-                Text("De serie: duplica para editar").font(.caption).foregroundStyle(.secondary)
+                Text("De serie: al editar se crea una copia").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             Button("Duplicar") { selectedId = model.duplicate(t).id }
@@ -209,10 +219,10 @@ struct TemplatesTab: View {
                         Text("Hueco \(n + 1)").font(.caption2).foregroundStyle(.secondary)
                     }
                 }
-                if !readOnly { slotStepper(t, index: index, slots: column.slots) }
+                slotStepper(t, index: index, slots: column.slots)
             }
             .padding(6)
-            if !readOnly && t.columns.count > 1 {
+            if t.columns.count > 1 {
                 VStack {
                     HStack {
                         Spacer()
@@ -253,7 +263,6 @@ struct TemplatesTab: View {
             .frame(width: 18, height: 46)
             .contentShape(Rectangle())
             .onHover { inside in
-                guard !readOnly else { return }
                 if inside && !cursorPushed {
                     NSCursor.resizeLeftRight.push()
                     cursorPushed = true
@@ -271,7 +280,6 @@ struct TemplatesTab: View {
             .gesture(
                 DragGesture(minimumDistance: 3, coordinateSpace: .named("screen"))
                     .onChanged { value in
-                        guard !readOnly else { return }
                         activeDivider = index
                         var draft = TemplateDraft(columns: t.columns)
                         draft.moveDivider(index, to: Double(value.location.x / width))
@@ -281,7 +289,8 @@ struct TemplatesTab: View {
                     }
                     .onEnded { _ in
                         if let drag = dragColumns, drag.id == t.id {
-                            model.update(Template(id: t.id, name: t.name, columns: drag.columns))
+                            let target = editable(t)
+                            model.update(Template(id: target.id, name: target.name, columns: drag.columns))
                         }
                         dragColumns = nil
                         activeDivider = nil
