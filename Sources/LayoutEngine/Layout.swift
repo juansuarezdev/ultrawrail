@@ -2,7 +2,7 @@ import CoreGraphics
 
 public enum Layout {
     static func columnWidth(_ column: Column, viewport: CGRect, config: LayoutConfig) -> Double {
-        column.width * (viewport.width - 2 * config.outerGap)
+        column.width * (viewport.width - 2 * config.outerGap + config.gap) - config.gap
     }
 
     /// X of the column's left edge in strip coordinates (0 = strip origin).

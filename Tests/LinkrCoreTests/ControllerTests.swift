@@ -63,16 +63,18 @@ final class ControllerTests: XCTestCase {
 
     func testStartLaysOutExistingWindows() {
         let (_, windows) = makeController([1, 2, 3])
-        XCTAssertEqual(windows.lastRect(1), CGRect(x: -489, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 0, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 500, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(1), CGRect(x: -484, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 505, y: 10, width: 485, height: 780))
     }
 
     func testFocusLeftCommandMovesStripAndFocusesWindow() {
         let (controller, windows) = makeController([1, 2, 3])
         controller.handle(.focusLeft)
-        XCTAssertEqual(windows.focusCalls.last, 2)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
+        controller.handle(.focusLeft)
+        XCTAssertEqual(windows.focusCalls.last, 1)
+        XCTAssertEqual(windows.lastRect(1), CGRect(x: 10, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 999, y: 10, width: 485, height: 780))
     }
 
     func testUnmanageableWindowsAreIgnored() {
@@ -82,13 +84,15 @@ final class ControllerTests: XCTestCase {
     }
 
     func testUnchangedLayoutIsNotRewritten() {
-        let (controller, windows) = makeController([1, 2, 3])
-        let before1 = windows.writes(1), before2 = windows.writes(2), before3 = windows.writes(3)
+        let (controller, windows) = makeController([1, 2, 3, 4])
+        let before1 = windows.writes(1), before2 = windows.writes(2)
+        let before3 = windows.writes(3), before4 = windows.writes(4)
         controller.handle(.focused(2))
-        // Focusing 2 scrolls the strip by 10 px: 2 and 3 move once, parked 1 does not change.
+        // Focusing 2 scrolls the strip from 990 to 495: 2, 3 and 4 move once, parked 1 does not change.
         XCTAssertEqual(windows.writes(1), before1)
         XCTAssertEqual(windows.writes(2) - before2, 1)
         XCTAssertEqual(windows.writes(3) - before3, 1)
+        XCTAssertEqual(windows.writes(4) - before4, 1)
     }
 
     func testFocusedEventRewritesThatWindowSoManualMovesSnapBack() {
@@ -120,9 +124,11 @@ final class ControllerTests: XCTestCase {
         windows.echoFocus = true
         let before = windows.setFrameCalls.count
         controller.handle(.focusLeft)
-        XCTAssertEqual(windows.focusCalls, [2])
-        // Windows 2 and 3 move once; the echoed focus event rewrites 2 once more.
-        XCTAssertEqual(windows.setFrameCalls.count - before, 3)
+        controller.handle(.focusLeft)
+        XCTAssertEqual(windows.focusCalls, [2, 1])
+        // Focusing 2 changes no frame; the echoed event rewrites 2 once (1 write).
+        // Focusing 1 scrolls the strip: 1, 2 and 3 move once and the echoed event rewrites 1 once more (4 writes).
+        XCTAssertEqual(windows.setFrameCalls.count - before, 5)
     }
 
     func testFocusedEventUpdatesModelWithoutRefocusing() {
@@ -145,8 +151,8 @@ final class ControllerTests: XCTestCase {
         let (controller, windows) = makeController([1, 2, 3])
         controller.handle(.closed(2))
         XCTAssertEqual(controller.workspace.allWindows, [1, 3])
-        XCTAssertEqual(windows.lastRect(1), CGRect(x: 0, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 500, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(1), CGRect(x: 10, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 505, y: 10, width: 485, height: 780))
     }
 
     func testDeadWindowIsRemovedOnRelayout() {

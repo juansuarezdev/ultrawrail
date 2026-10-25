@@ -16,10 +16,10 @@ final class StripPreviewTests: XCTestCase {
         var ws = makeWorkspace(3)
         Layout.reveal(&ws, viewport: viewport, config: config)
         let preview = StripPreview(workspace: ws, viewport: viewport, config: config)
-        XCTAssertEqual(preview.frameX, 510.0 / 1510.0, accuracy: 1e-9)
-        XCTAssertEqual(preview.frameWidth, 1000.0 / 1510.0, accuracy: 1e-9)
+        XCTAssertEqual(preview.frameX, 495.0 / 1495.0, accuracy: 1e-9)
+        XCTAssertEqual(preview.frameWidth, 1000.0 / 1495.0, accuracy: 1e-9)
         XCTAssertEqual(preview.items.map(\.id), [1, 2, 3])
-        XCTAssertEqual(preview.items[2].rect.minX, 1010.0 / 1510.0, accuracy: 1e-9)
+        XCTAssertEqual(preview.items[2].rect.minX, 1000.0 / 1495.0, accuracy: 1e-9)
         XCTAssertEqual(preview.items[2].rect.minY, 10.0 / 800.0, accuracy: 1e-9)
         XCTAssertEqual(preview.items[2].rect.height, 780.0 / 800.0, accuracy: 1e-9)
         XCTAssertEqual(preview.items.map(\.isFocused), [false, false, true])
@@ -30,7 +30,7 @@ final class StripPreviewTests: XCTestCase {
         let preview = StripPreview(workspace: makeWorkspace(1), viewport: viewport, config: config)
         XCTAssertEqual(preview.frameX, 0, accuracy: 1e-9)
         XCTAssertEqual(preview.frameWidth, 1, accuracy: 1e-9)
-        XCTAssertEqual(preview.items[0].rect.width, 490.0 / 1000.0, accuracy: 1e-9)
+        XCTAssertEqual(preview.items[0].rect.width, 485.0 / 1000.0, accuracy: 1e-9)
     }
 
     func testInterpolationBlendsMatchingItemsAndKeepsNewOnesAtTarget() {

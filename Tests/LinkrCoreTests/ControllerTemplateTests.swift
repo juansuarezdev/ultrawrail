@@ -19,7 +19,7 @@ final class ControllerTemplateTests: XCTestCase {
         let (controller, windows) = makeController([1, 2, 3])
         controller.applyTemplate(Template.all[0], assignment: [3, 1])
         XCTAssertEqual(controller.workspace.columns.map(\.windows), [[3], [1], [2]])
-        XCTAssertEqual(windows.lastRect(3)?.width, 490)
+        XCTAssertEqual(windows.lastRect(3)?.width, 485)
         XCTAssertEqual(windows.lastRect(3)?.origin.x, 10)
     }
 

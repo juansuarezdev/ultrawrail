@@ -34,42 +34,42 @@ final class ControllerAnimationTests: XCTestCase {
     func testFocusChangeSlidesWindowsThenLandsOnTarget() {
         let (controller, windows) = makeController([1, 2, 3])
         let before = windows.setFrameCalls.count
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         XCTAssertEqual(windows.setFrameCalls.count, before)
 
         clock.fire(advancingBy: 0.09)
         let mid = windows.lastRect(2)!
-        XCTAssertGreaterThan(mid.minX, 0)
+        XCTAssertGreaterThan(mid.minX, -237.5)
         XCTAssertLessThan(mid.minX, 10)
 
         clock.fire(advancingBy: 0.2)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 257.5, y: 10, width: 485, height: 780))
         XCTAssertFalse(clock.isRunning)
     }
 
     func testSizeChangeWritesImmediately() {
         let (controller, windows) = makeController([1, 2, 3])
         controller.handle(.cycleWidth)
-        XCTAssertEqual(windows.lastRect(3)!.width, 0.66 * 980, accuracy: 0.001)
+        XCTAssertEqual(windows.lastRect(3)!.width, 0.66 * 990 - 10, accuracy: 0.001)
     }
 
     func testOffWritesImmediatelyAndNeverStartsTheClock() {
         let (controller, windows) = makeController([1, 2, 3], speed: .off)
-        controller.handle(.focusLeft)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
+        controller.handle(.centerColumn)
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
         XCTAssertFalse(clock.isRunning)
     }
 
     func testReduceMotionWritesImmediatelyUnlessIgnored() {
         let (reduced, reducedWindows) = makeController([1, 2, 3], reduceMotion: true)
-        reduced.handle(.focusLeft)
-        XCTAssertEqual(reducedWindows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
+        reduced.handle(.centerColumn)
+        XCTAssertEqual(reducedWindows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
         XCTAssertFalse(clock.isRunning)
 
         let (ignored, ignoredWindows) = makeController([1, 2, 3], respectReduceMotion: false, reduceMotion: true)
         let before = ignoredWindows.setFrameCalls.count
-        ignored.handle(.focusLeft)
+        ignored.handle(.centerColumn)
         XCTAssertEqual(ignoredWindows.setFrameCalls.count, before)
         XCTAssertTrue(clock.isRunning)
     }
@@ -96,56 +96,56 @@ final class ControllerAnimationTests: XCTestCase {
 
     func testSlowFrameSnapsToTarget() {
         let (controller, windows) = makeController([1, 2, 3])
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         windows.onSetFrame = { [clock] in clock.time += 0.05 }
         clock.fire(advancingBy: 0.01)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 257.5, y: 10, width: 485, height: 780))
         XCTAssertFalse(clock.isRunning)
     }
 
     func testNewLayoutDuringAnimationRetargetsFromCurrentPosition() {
         let (controller, windows) = makeController([1, 2, 3])
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         clock.fire(advancingBy: 0.09)
         let calls = windows.setFrameCalls.count
-        controller.handle(.focusRight)
+        controller.handle(.focusLeft)
         XCTAssertEqual(windows.setFrameCalls.count, calls)
         clock.fire(advancingBy: 0.3)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 0, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 500, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 505, y: 10, width: 485, height: 780))
     }
 
     func testFailedWriteDuringAnimationCancelsOnlyThatWindow() {
         let (controller, windows) = makeController([1, 2, 3])
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         windows.failing = [2]
         clock.fire(advancingBy: 0.09)
         let writesAfterFailure = windows.writes(2)
         clock.fire(advancingBy: 0.3)
         XCTAssertEqual(windows.writes(2), writesAfterFailure)
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 257.5, y: 10, width: 485, height: 780))
         XCTAssertTrue(controller.workspace.contains(2))
     }
 
     func testFocusEchoDuringAnimationDoesNotInterruptIt() {
         let (controller, windows) = makeController([1, 2, 3])
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         clock.fire(advancingBy: 0.09)
         let calls = windows.setFrameCalls.count
-        controller.handle(.focused(2))
+        controller.handle(.focused(3))
         XCTAssertTrue(clock.isRunning)
         XCTAssertEqual(windows.setFrameCalls.count, calls)
 
         clock.fire(advancingBy: 0.3)
-        XCTAssertEqual(windows.lastRect(2), CGRect(x: 10, y: 10, width: 490, height: 780))
-        XCTAssertEqual(windows.lastRect(3), CGRect(x: 510, y: 10, width: 490, height: 780))
+        XCTAssertEqual(windows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
+        XCTAssertEqual(windows.lastRect(3), CGRect(x: 257.5, y: 10, width: 485, height: 780))
     }
 
     func testIntermediateFramesAreMoveOnlyAndFinalFrameWritesSize() {
         let (controller, windows) = makeController([1, 2, 3])
         let baseline = windows.setFrameCalls.count
-        controller.handle(.focusLeft)
+        controller.handle(.centerColumn)
         clock.fire(advancingBy: 0.09)
         let midCalls = windows.setFrameCalls.dropFirst(baseline)
         XCTAssertFalse(midCalls.isEmpty)
