@@ -75,4 +75,12 @@ final class TemplateTests: XCTestCase {
         let frames = Layout.frames(ws, viewport: viewport, config: LayoutConfig(gap: 10, outerGap: 10))
         XCTAssertTrue(viewport.contains(frames[4]!.insetBy(dx: 1, dy: 1)))
     }
+
+    func testLeftoverColumnsUseNewColumnWidth() {
+        var ws = workspace(4)
+        ws.newColumnWidth = 0.33
+        ws.apply(Template.all[0], assignment: [2, 1])
+        XCTAssertEqual(ws.columns[2].width, 0.33)
+        XCTAssertEqual(ws.columns[3].width, 0.33)
+    }
 }
