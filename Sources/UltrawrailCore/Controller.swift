@@ -465,7 +465,7 @@ public final class Controller {
         relayout(force: true)
     }
 
-    /// Moves every inactive page's windows off the right edge of its zone, keeping their size.
+    /// Moves every inactive page's windows off the right edge of the whole display, keeping their size.
     /// Returns false when some window was dropped after repeated failures.
     private func parkInactivePages(sizes: [WindowID: CGSize], full: CGRect) -> Bool {
         var ok = true
@@ -474,7 +474,7 @@ public final class Controller {
             for (index, page) in value.pages.enumerated() where index != value.currentPage {
                 for id in page.allWindows {
                     let size = sizes[id]
-                    let rect = CGRect(x: viewport.maxX - 1, y: viewport.minY,
+                    let rect = CGRect(x: full.maxX - 1, y: viewport.minY,
                                       width: size?.width ?? 200, height: size?.height ?? viewport.height)
                     if !write(rect, to: id) { ok = false }
                 }

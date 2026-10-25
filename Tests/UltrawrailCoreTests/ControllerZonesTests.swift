@@ -133,10 +133,10 @@ final class ControllerZonesTests: XCTestCase {
         XCTAssertEqual(c.pages.count, 1)
     }
 
-    func testParkingIsRelativeToZoneSlice() {
+    func testParkingIsAtDisplayEdgeForEveryZone() {
         let (c, w) = make([1], zones: 2)
         c.handle(.nextPage)
-        XCTAssertEqual(w.lastRect(1)?.minX, 499)
+        XCTAssertEqual(w.lastRect(1)?.minX, w.usableFrame().maxX - 1)
     }
 
     func testSnapshotIncludesZoneAndFocusedSlice() {
@@ -173,7 +173,7 @@ final class ControllerZonesTests: XCTestCase {
         let expected = Layout.frames(c.zones[1].pages[0], viewport: slice1, config: config)
         c.restoreParkedWindows()
         XCTAssertEqual(w.lastRect(2), expected[WindowID(2)])
-        XCTAssertNotEqual(w.lastRect(1)?.minX, 499)
+        XCTAssertNotEqual(w.lastRect(1)?.minX, w.usableFrame().maxX - 1)
     }
 
     func testNewColumnWidthAppliesToAllZones() {
