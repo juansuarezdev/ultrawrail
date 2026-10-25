@@ -127,11 +127,11 @@ and replace the three `Column(windows: ...)` creations that use the default widt
     }
     public var newColumnWidth: Double {
         get { workspace.newColumnWidth }
-        set { workspace.newColumnWidth = newColumnWidth_clamped(newValue) }
+        set { workspace.newColumnWidth = newValue }
     }
 ```
 
-Do NOT add a helper: write the setter as `set { workspace.newColumnWidth = newValue }`. (`workspace` is `private(set)` but is mutated inside the class, which is allowed.) `init` keeps `self.config = config` (no `didSet` fires in init).
+`workspace` is `private(set)` but is mutated inside the class, which is allowed. `init` keeps `self.config = config` (no `didSet` fires in init).
 
 - [ ] **Step 4: Run to verify pass** — `swift test` all green, `swift build` 0 warnings.
 
