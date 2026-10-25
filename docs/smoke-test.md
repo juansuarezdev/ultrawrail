@@ -3,8 +3,8 @@
 Cubre lo que los tests unitarios no pueden: Accessibility y atajos reales.
 
 1. `scripts/bundle.sh` (idealmente con `SIGN_IDENTITY="Apple Development: ..."`).
-2. `open build/Panerail.app`. Debe aparecer el icono en la barra de menús y el aviso de permiso.
-3. Pulsa "Abrir Ajustes", activa Panerail en Accesibilidad. En ~1 s el menú pasa a "Activo".
+2. `open build/Ultrawrail.app`. Debe aparecer el icono en la barra de menús y el aviso de permiso.
+3. Pulsa "Abrir Ajustes", activa Ultrawrail en Accesibilidad. En ~1 s el menú pasa a "Activo".
 4. Abre TextEdit y crea tres documentos con ⌘N.
    - Esperado: tres columnas del 50 % de ancho; la última visible a la derecha, la primera aparcada a la izquierda con 1 px visible.
 5. ⌃⌥H / ⌃⌥L: el foco y la tira se desplazan una columna.
@@ -15,7 +15,7 @@ Cubre lo que los tests unitarios no pueden: Accessibility y atajos reales.
 9. ⌃⌥[ : la ventana enfocada se apila en la columna de su izquierda; ⌃⌥J / ⌃⌥K cambian de ventana en la pila; ⌃⌥] la saca a su propia columna.
 10. Cierra una ventana: las demás se recolocan. Abre un diálogo (⌘O en TextEdit): flota y no entra en la tira.
 11. Bloquea la pantalla y desbloquea: el layout se mantiene.
-12. Menú: "Iniciar al arrancar" marca/desmarca; "Salir de Panerail" cierra la app.
+12. Menú: "Iniciar al arrancar" marca/desmarca; "Salir de Ultrawrail" cierra la app.
 
 Si algo falla, anota el paso y el comportamiento observado.
 
@@ -27,7 +27,7 @@ Pasos adicionales:
 
 ## Animación y previsualización
 
-1. Abre el menú de Panerail. Arriba debe verse la tira dibujada, con el marco de pantalla y la barra de posición debajo, y la línea "Activo · N columnas · M ventanas".
+1. Abre el menú de Ultrawrail. Arriba debe verse la tira dibujada, con el marco de pantalla y la barra de posición debajo, y la línea "Activo · N columnas · M ventanas".
 2. Con tres ventanas de TextEdit, pulsa ⌃⌥H / ⌃⌥L: las ventanas se deslizan en ~0,18 s en vez de saltar. No deben quedar a medio camino ni parpadear.
 3. Abre el menú y, con él abierto, pulsa ⌃⌥H / ⌃⌥L: el marco y la barra de la previsualización se mueven con suavidad.
 4. Cierra el menú, cambia el foco varias veces y ábrelo: la previsualización ya muestra el estado actual, sin animar.
@@ -36,7 +36,7 @@ Pasos adicionales:
 7. Cambia el ancho con ⌃⌥R: la ventana enfocada cambia de ancho al instante (no se anima).
 8. Con el menú abierto y otra app enfocada, los atajos ⌃⌥H / ⌃⌥L siguen funcionando y el menú no se cierra al cambiar el foco.
 9. El menú abre sin retraso perceptible.
-10. Abre el menú, ciérralo y mira la CPU de Panerail en el Monitor de Actividad: debe quedar en reposo (el temporizador de la previsualización se detiene al cerrar el menú).
+10. Abre el menú, ciérralo y mira la CPU de Ultrawrail en el Monitor de Actividad: debe quedar en reposo (el temporizador de la previsualización se detiene al cerrar el menú).
 11. Abre una app pesada (por ejemplo un navegador con varias pestañas) junto a TextEdit y repite el paso 2: si se ven tirones, anótalo; el salto automático por frame lento debe evitar que se quede a medias.
 
 ## Plantillas
@@ -63,12 +63,12 @@ Pasos adicionales:
 
 ## Ventana de ajustes
 
-1. El menú tiene "Ajustes…" (Cmd+,). Al abrirlo aparece una ventana con pestañas General, Diseño y Atajos, y Panerail aparece en el Dock y en Cmd+Tab. Al cerrarla desaparece del Dock.
+1. El menú tiene "Ajustes…" (Cmd+,). Al abrirlo aparece una ventana con pestañas General, Diseño y Atajos, y Ultrawrail aparece en el Dock y en Cmd+Tab. Al cerrarla desaparece del Dock.
 2. Abrir Ajustes dos veces reutiliza la misma ventana.
 3. En General, cambiar velocidad, ventanas nuevas o teclado se refleja en el menú, y al revés.
 4. En Diseño, mover "Hueco entre ventanas" y "Margen exterior" recoloca las ventanas en vivo. Cambiar el ancho de las columnas nuevas solo afecta a ventanas que se añaden después.
 5. "Restaurar valores" vuelve a 8 px, 8 px y 50 %.
-6. Los ajustes persisten al cerrar y reabrir Panerail.
+6. Los ajustes persisten al cerrar y reabrir Ultrawrail.
 7. Con 2 columnas de 50 %, cambiar el foco entre ellas no mueve las ventanas (sin desplazamiento leve).
 
 ## Editor de plantillas
@@ -79,7 +79,7 @@ Pasos adicionales:
 4. "+ Columna" parte la más ancha; "−" fusiona con la vecina; "− n huecos +" cambia entre 1 y 3 huecos.
 5. El selector 16:9, 21:9, 32:9 cambia la proporción del lienzo; por defecto la del monitor.
 6. Las plantillas propias salen en Ctrl+Alt+T tras las de serie; con muchas, las tarjetas se desplazan con la rueda.
-7. Cerrar y reabrir Panerail conserva las plantillas propias; "Borrar" las quita.
+7. Cerrar y reabrir Ultrawrail conserva las plantillas propias; "Borrar" las quita.
 
 ## Ultrawide
 
@@ -87,7 +87,7 @@ Pasos adicionales:
 2. "Ancho máximo de columna" recorta las columnas a N px; en 0 muestra "sin límite".
 3. "Centrar el grupo si cabe en pantalla" coloca 2 columnas de 25 % en el centro de la pantalla.
 4. "Restaurar valores" desactiva las tres opciones.
-5. Las tres opciones persisten al cerrar y reabrir Panerail.
+5. Las tres opciones persisten al cerrar y reabrir Ultrawrail.
 
 ## Limitaciones conocidas
 

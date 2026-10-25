@@ -1,4 +1,4 @@
-# Prompt de logo e icono: Panerail
+# Prompt de logo e icono: Ultrawrail
 
 Prompt listo para pegar en una herramienta de diseño o de generación de imágenes. Sustituye `[VARIANTE]` por A, B o C (ver abajo).
 
@@ -6,7 +6,7 @@ Prompt listo para pegar en una herramienta de diseño o de generación de imáge
 
 ## Prompt principal
 
-Diseña el icono de aplicación de **Panerail**, un gestor de ventanas nativo para macOS que vive en la barra de menús. Panerail organiza las ventanas en **columnas sobre una tira horizontal que se desplaza** (scrolling window manager, al estilo de niri o PaperWM) y está pensado también para monitores ultrawide: la tira se extiende más allá de los bordes de la pantalla y el foco la desliza.
+Diseña el icono de aplicación de **Ultrawrail**, un gestor de ventanas nativo para macOS que vive en la barra de menús. Ultrawrail organiza las ventanas en **columnas sobre una tira horizontal que se desplaza** (scrolling window manager, al estilo de niri o PaperWM) y está pensado también para monitores ultrawide: la tira se extiende más allá de los bordes de la pantalla y el foco la desliza.
 
 ### Concepto visual
 
@@ -45,7 +45,7 @@ Acento principal: azul `#2F6BFF`. Acento del carril: turquesa `#00C2A8`.
 ### Restricciones
 
 - Debe leerse con claridad a **16 px**: pocas formas, contraste alto, sin detalles finos que desaparezcan.
-- **Sin texto, sin letras ni la palabra "Panerail"** dentro del icono.
+- **Sin texto, sin letras ni la palabra "Ultrawrail"** dentro del icono.
 - **Sin marcas, logos ni elementos reconocibles de terceros** (no Apple, no niri, no PaperWM, no iconos de otros gestores de ventanas).
 - **Fondo transparente** fuera del squircle (canal alfa limpio, sin cuadro blanco ni sombra recortada).
 - Sin fotografías, sin personas, sin mascotas.
