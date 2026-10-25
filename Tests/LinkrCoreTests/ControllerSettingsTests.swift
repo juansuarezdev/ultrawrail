@@ -37,4 +37,15 @@ final class ControllerSettingsTests: XCTestCase {
         controller.handle(.opened(WindowInfo(id: 2, isManageable: true)))
         XCTAssertEqual(controller.workspace.columns.map(\.width), [0.5, 0.33])
     }
+
+    func testShrinkingGapsAtStripEndLeavesNoBlankSpace() throws {
+        let (controller, windows) = makeController([1, 2, 3])
+        controller.handle(.focused(3))
+        let tight = LayoutConfig(gap: 0, outerGap: 0)
+        controller.config = tight
+        let viewport = windows.frame
+        let width = Layout.stripWidth(controller.workspace, viewport: viewport, config: tight)
+        let expectedMaxX = viewport.minX + min(width, viewport.width) - tight.outerGap
+        XCTAssertEqual(try XCTUnwrap(windows.lastRect(3)).maxX, CGFloat(expectedMaxX), accuracy: 0.5)
+    }
 }
