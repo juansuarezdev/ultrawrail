@@ -108,7 +108,7 @@ final class ControllerOverviewTests: XCTestCase {
         c.moveWindow(WindowID(3), toZone: 1, page: 0)
         XCTAssertEqual(c.focusedZone, 1)
         XCTAssertEqual(w.focusCalls.last, 3)
-        XCTAssertEqual(c.overview()[0].pages.count, 1)
+        XCTAssertEqual(c.overview()[0].pages.map(\.windows), [ids(1, 2), []])
         c.moveWindow(WindowID(3), toZone: 0, page: 0)
         XCTAssertEqual(c.focusedZone, 0)
         XCTAssertEqual(c.currentPage, 0)
