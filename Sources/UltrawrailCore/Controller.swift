@@ -23,6 +23,26 @@ public struct WorkspaceSnapshot: Equatable, Sendable {
     }
 }
 
+public struct PageOverview: Equatable, Sendable {
+    public let windows: [WindowID]
+    public let isCurrent: Bool
+
+    public init(windows: [WindowID], isCurrent: Bool) {
+        self.windows = windows
+        self.isCurrent = isCurrent
+    }
+}
+
+public struct ZoneOverview: Equatable, Sendable {
+    public let pages: [PageOverview]
+    public let isFocused: Bool
+
+    public init(pages: [PageOverview], isFocused: Bool) {
+        self.pages = pages
+        self.isFocused = isFocused
+    }
+}
+
 /// A vertical slice of the display with its own pages.
 struct Zone: Equatable {
     var pages: [Workspace] = [Workspace()]
@@ -591,6 +611,50 @@ public final class Controller {
         needsClamp = true
         switchPage(to: target)
         focusWindow(id)
+    }
+
+    /// Every zone and page with its windows in column order.
+    public func overview() -> [ZoneOverview] {
+        zones.enumerated().map { index, zone in
+            ZoneOverview(pages: zone.pages.enumerated().map { page, workspace in
+                PageOverview(windows: workspace.allWindows, isCurrent: page == zone.currentPage)
+            }, isFocused: index == focusedZone)
+        }
+    }
+
+    /// Moves a window to another zone and page without switching to it, unless it is the focused
+    /// window (then focus follows it). A page index equal to the page count appends a new page.
+    public func moveWindow(_ id: WindowID, toZone zone: Int, page: Int) {
+        guard let source = locate(id), zones.indices.contains(zone), page >= 0,
+              source.zone != zone || source.page != page else { return }
+        let count = zones[zone].pages.count
+        guard page < count || (page == count && count < Self.maxPages) else { return }
+        let wasFocused = source.zone == focusedZone && source.page == currentPage
+            && workspace.focusedWindow == id
+        if page == count {
+            var fresh = Workspace()
+            fresh.newColumnWidth = newColumnWidth
+            zones[zone].pages.append(fresh)
+        }
+        zones[source.zone].pages[source.page].removeWindow(id)
+        zones[zone].pages[page].addWindow(id)
+        if wasFocused {
+            focusedZone = zone
+            zones[zone].currentPage = page
+            suppressFocusEcho()
+        }
+        trimTrailingPages(of: source.zone)
+        trimTrailingPages(of: zone)
+        needsClamp = true
+        relayout(force: true)
+        if wasFocused { focusWindow(id) }
+    }
+
+    private func trimTrailingPages(of zone: Int) {
+        while zones[zone].pages.count > 1, zones[zone].pages.count - 1 != zones[zone].currentPage,
+              zones[zone].pages[zones[zone].pages.count - 1].allWindows.isEmpty {
+            zones[zone].pages.removeLast()
+        }
     }
 
     private func focusCurrent() {
