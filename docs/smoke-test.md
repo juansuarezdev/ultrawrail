@@ -97,7 +97,7 @@ Pasos adicionales:
 4. Las ventanas nuevas entran en la página activa.
 5. Cerrar la última ventana de una página intermedia no rompe el cambio.
 6. El menú muestra "Página N de M".
-7. Brave/Chrome usan Cmd+Option+←/→ para cambiar de pestaña: si el atajo no registra o choca, se indica en el menú como cualquier atajo fallido.
+7. El registro Carbon de ⌘⌥←/→ NO falla aunque otra app use ese atajo en sus menús: Ultrawrail se lo quita en silencio a Brave/Chrome (cambio de pestaña), VS Code (cambio de editor) e iTerm (navegación entre paneles). Comprueba que en esas apps el atajo cambia de página y no de pestaña/editor/panel.
 
 ## Limitaciones conocidas
 
@@ -105,3 +105,5 @@ Pasos adicionales:
 - Las ventanas de pantallas secundarias u otros Spaces se traen a la tira de la pantalla principal cuando reciben el foco.
 - Las apps ocultas (⌘H) dejan huecos en la tira.
 - No se comprueban los valores de retorno del registro de notificaciones AX.
+- Las ventanas aparcadas pueden verse en una segunda pantalla situada a la derecha de la principal.
+- Si Ultrawrail se cierra de forma inesperada estando en la página 2, las ventanas de las demás páginas siguen aparcadas hasta volver a abrirlo.
