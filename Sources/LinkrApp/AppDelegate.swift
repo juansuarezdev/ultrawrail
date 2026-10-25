@@ -3,15 +3,12 @@ import ApplicationServices
 import LayoutEngine
 import LinkrCore
 import QuartzCore
-import ServiceManagement
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
-    private let settingsStore = MotionSettingsStore()
-    private let keyboardStore = KeyboardStyleStore()
-    private let placementStore = PlacementStore()
+    let model = SettingsModel()
     private var controller: Controller?
     private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
@@ -22,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        model.onChange = { [weak self] in self?.settingsChanged() }
         statusItem.button?.image = NSImage(
             systemSymbolName: "rectangle.split.3x1",
             accessibilityDescription: "Linkr"
@@ -31,6 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else {
             requestPermission()
         }
+        rebuildMenu()
+    }
+
+    private func settingsChanged() {
+        controller?.motion = model.motion
+        controller?.placement = model.placement
+        controller?.config = model.layoutConfig
+        controller?.newColumnWidth = model.newColumnWidth
         rebuildMenu()
     }
 
@@ -72,11 +78,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let controller = Controller(
             windows: AXWindowService(),
             hotkeys: CarbonHotkeyService(),
+            config: model.layoutConfig,
             animator: animator,
             reduceMotion: { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
         )
-        controller.motion = settingsStore.settings
-        controller.placement = placementStore.mode
+        controller.motion = model.motion
+        controller.placement = model.placement
+        controller.newColumnWidth = model.newColumnWidth
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         templatePanel = TemplatePanelController(controller: controller)
         controller.onShowTemplates = { [weak self] in self?.templatePanel?.toggle() }
@@ -98,7 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func workspaceChanged(_ snapshot: WorkspaceSnapshot) {
         lastSnapshot = snapshot
-        previewView.animationDuration = settingsStore.settings.previewDuration(reduceMotion: reduceMotion)
+        previewView.animationDuration = model.motion.previewDuration(reduceMotion: reduceMotion)
         previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
         statusLineItem?.title = statusText()
         previewView.setAccessibilityLabel(statusText())
@@ -133,7 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         if controller != nil {
-            let settings = settingsStore.settings
+            let settings = model.motion
 
             let speedItem = NSMenuItem(title: "Velocidad de animación", action: nil, keyEquivalent: "")
             let speedMenu = NSMenu()
@@ -152,7 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             for (mode, title) in [(PlacementMode.manual, "Manual (Ctrl+Alt+A para añadir)"), (.automatic, "Automático")] {
                 let item = NSMenuItem(title: title, action: #selector(selectPlacement(_:)), keyEquivalent: "")
                 item.representedObject = mode.rawValue
-                item.state = placementStore.mode == mode ? .on : .off
+                item.state = model.placement == mode ? .on : .off
                 item.target = self
                 placementMenu.addItem(item)
             }
@@ -167,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let legendItem = NSMenuItem(title: "Atajos de teclado", action: nil, keyEquivalent: "")
         let legendMenu = NSMenu()
-        let style = keyboardStore.style
+        let style = model.keyboardStyle
         for (option, title) in [(KeyboardStyle.windows, "Teclado Windows"), (.mac, "Teclado Mac")] {
             let item = NSMenuItem(title: title, action: #selector(selectKeyboardStyle(_:)), keyEquivalent: "")
             item.representedObject = option.rawValue
@@ -185,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(legendItem)
 
         let login = NSMenuItem(title: "Iniciar al arrancar", action: #selector(toggleLogin), keyEquivalent: "")
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        login.state = model.launchAtLogin ? .on : .off
         login.target = self
         menu.addItem(login)
         menu.addItem(.separator())
@@ -213,46 +221,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func selectSpeed(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let speed = MotionSpeed(rawValue: raw) else { return }
-        var settings = settingsStore.settings
-        settings.speed = speed
-        apply(settings)
+        model.speed = speed
     }
 
     @objc private func selectPlacement(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let mode = PlacementMode(rawValue: raw) else { return }
-        placementStore.mode = mode
-        controller?.placement = mode
-        rebuildMenu()
+        model.placement = mode
     }
 
     @objc private func selectKeyboardStyle(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let style = KeyboardStyle(rawValue: raw) else { return }
-        keyboardStore.style = style
-        rebuildMenu()
+        model.keyboardStyle = style
     }
 
     @objc private func toggleReduceMotion() {
-        var settings = settingsStore.settings
-        settings.respectReduceMotion.toggle()
-        apply(settings)
-    }
-
-    private func apply(_ settings: MotionSettings) {
-        settingsStore.settings = settings
-        controller?.motion = settings
-        rebuildMenu()
+        model.respectReduceMotion.toggle()
     }
 
     @objc private func toggleLogin() {
-        do {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-            } else {
-                try SMAppService.mainApp.register()
-            }
-        } catch {
-            NSLog("Linkr: login item change failed: \(error)")
-        }
-        rebuildMenu()
+        model.launchAtLogin.toggle()
     }
 }
