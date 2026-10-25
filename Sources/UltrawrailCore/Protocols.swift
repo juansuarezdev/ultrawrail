@@ -47,6 +47,7 @@ public protocol WindowService: AnyObject {
 @MainActor
 public protocol HotkeyService: AnyObject {
     var onCommand: ((Command) -> Void)? { get set }
+    /// Replaces every registered shortcut with `shortcuts`.
     /// Returns a description of each shortcut that could not be registered.
-    func register() -> [String]
+    func register(_ shortcuts: [ResolvedShortcut]) -> [String]
 }

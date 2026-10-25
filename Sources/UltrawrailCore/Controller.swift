@@ -154,10 +154,25 @@ public final class Controller {
         }
     }
 
+    public var shortcuts = ShortcutMap()
+
+    /// Re-registers the global hotkeys after the user changed them.
+    public func reloadShortcuts(_ map: ShortcutMap) {
+        shortcuts = map
+        failedHotkeys = hotkeys.register(map.resolved)
+    }
+
+    /// Unregisters every hotkey, for example while the user records a new one.
+    public func suspendShortcuts() {
+        failedHotkeys = hotkeys.register([])
+    }
+
+    public func resumeShortcuts() { reloadShortcuts(shortcuts) }
+
     public func start() {
         windows.onEvent = { [weak self] event in self?.handle(event) }
         hotkeys.onCommand = { [weak self] command in self?.handle(command) }
-        failedHotkeys = hotkeys.register()
+        failedHotkeys = hotkeys.register(shortcuts.resolved)
         windows.start()
         for info in windows.allWindows() { adopt(info) }
         relayout()

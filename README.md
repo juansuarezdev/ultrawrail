@@ -37,7 +37,7 @@ On a 34" or 49" ultrawide, tiling everything into fixed halves wastes the width 
 
 ## Shortcuts
 
-Written for a Windows keyboard on a Mac (`Win` = `⌘`, `Alt` = `⌥`, `Ctrl` = `⌃`). Settings can show them in Mac notation instead.
+Written for a Windows keyboard on a Mac (`Win` = `⌘`, `Alt` = `⌥`, `Ctrl` = `⌃`). Every one can be rebound in Settings → Atajos (with conflict detection and reset), and shown in Mac notation instead.
 
 | Shortcut | Action |
 | --- | --- |

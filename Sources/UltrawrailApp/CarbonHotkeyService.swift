@@ -30,55 +30,27 @@ private func hotkeyHandler(
 final class CarbonHotkeyService: HotkeyService {
     var onCommand: ((Command) -> Void)?
 
-    private struct Binding {
-        let name: String
-        let keyCode: Int
-        let command: Command
-        var shift = false
-        var modifiers: Int?
-    }
-
-    private static let bindings: [Binding] = [
-        Binding(name: "⌃⌥H", keyCode: kVK_ANSI_H, command: .focusLeft),
-        Binding(name: "⌃⌥←", keyCode: kVK_LeftArrow, command: .focusLeft),
-        Binding(name: "⌃⌥L", keyCode: kVK_ANSI_L, command: .focusRight),
-        Binding(name: "⌃⌥→", keyCode: kVK_RightArrow, command: .focusRight),
-        Binding(name: "⌃⌥K", keyCode: kVK_ANSI_K, command: .focusUp),
-        Binding(name: "⌃⌥↑", keyCode: kVK_UpArrow, command: .focusUp),
-        Binding(name: "⌃⌥J", keyCode: kVK_ANSI_J, command: .focusDown),
-        Binding(name: "⌃⌥↓", keyCode: kVK_DownArrow, command: .focusDown),
-        Binding(name: "⌃⌥R", keyCode: kVK_ANSI_R, command: .cycleWidth),
-        Binding(name: "⌃⌥F", keyCode: kVK_ANSI_F, command: .toggleFullWidth),
-        Binding(name: "⌃⌥C", keyCode: kVK_ANSI_C, command: .centerColumn),
-        Binding(name: "⌃⌥[", keyCode: kVK_ANSI_LeftBracket, command: .stackLeft),
-        Binding(name: "⌃⌥]", keyCode: kVK_ANSI_RightBracket, command: .unstack),
-        Binding(name: "⌃⌥⇧H", keyCode: kVK_ANSI_H, command: .moveColumnLeft, shift: true),
-        Binding(name: "⌃⌥⇧←", keyCode: kVK_LeftArrow, command: .moveColumnLeft, shift: true),
-        Binding(name: "⌃⌥⇧L", keyCode: kVK_ANSI_L, command: .moveColumnRight, shift: true),
-        Binding(name: "⌃⌥⇧→", keyCode: kVK_RightArrow, command: .moveColumnRight, shift: true),
-        Binding(name: "⌃⌥A", keyCode: kVK_ANSI_A, command: .adoptWindow),
-        Binding(name: "⌃⌥T", keyCode: kVK_ANSI_T, command: .showTemplates),
-        Binding(name: "⌘⌥←", keyCode: kVK_LeftArrow, command: .previousPage, modifiers: cmdKey | optionKey),
-        Binding(name: "⌘⌥→", keyCode: kVK_RightArrow, command: .nextPage, modifiers: cmdKey | optionKey),
-        Binding(name: "⌘⌥⇧←", keyCode: kVK_LeftArrow, command: .moveWindowToPreviousPage, modifiers: cmdKey | optionKey | shiftKey),
-        Binding(name: "⌘⌥⇧→", keyCode: kVK_RightArrow, command: .moveWindowToNextPage, modifiers: cmdKey | optionKey | shiftKey),
-        Binding(name: "⌃⌥⌘←", keyCode: kVK_LeftArrow, command: .focusZoneLeft, modifiers: controlKey | optionKey | cmdKey),
-        Binding(name: "⌃⌥⌘→", keyCode: kVK_RightArrow, command: .focusZoneRight, modifiers: controlKey | optionKey | cmdKey),
-        Binding(name: "⌃⌥⌘⇧←", keyCode: kVK_LeftArrow, command: .moveWindowToZoneLeft, modifiers: controlKey | optionKey | cmdKey | shiftKey),
-        Binding(name: "⌃⌥⌘⇧→", keyCode: kVK_RightArrow, command: .moveWindowToZoneRight, modifiers: controlKey | optionKey | cmdKey | shiftKey),
-    ]
-
+    private var shortcuts: [ResolvedShortcut] = []
     private var refs: [EventHotKeyRef] = []
     private var handlerInstalled = false
 
-    func register() -> [String] {
+    func register(_ shortcuts: [ResolvedShortcut]) -> [String] {
         installHandlerIfNeeded()
+        for ref in refs { UnregisterEventHotKey(ref) }
+        refs = []
+        self.shortcuts = shortcuts
         var failed: [String] = []
-        for (index, binding) in Self.bindings.enumerated() {
+        for (index, shortcut) in shortcuts.enumerated() {
+            let combo = shortcut.combo
+            var modifiers = 0
+            if combo.control { modifiers |= controlKey }
+            if combo.option { modifiers |= optionKey }
+            if combo.command { modifiers |= cmdKey }
+            if combo.shift { modifiers |= shiftKey }
             var ref: EventHotKeyRef?
             let status = RegisterEventHotKey(
-                UInt32(binding.keyCode),
-                UInt32(binding.modifiers ?? (controlKey | optionKey | (binding.shift ? shiftKey : 0))),
+                UInt32(combo.keyCode),
+                UInt32(modifiers),
                 EventHotKeyID(signature: hotkeySignature, id: UInt32(index)),
                 GetApplicationEventTarget(),
                 0,
@@ -87,15 +59,15 @@ final class CarbonHotkeyService: HotkeyService {
             if status == noErr, let ref {
                 refs.append(ref)
             } else {
-                failed.append(binding.name)
+                failed.append(shortcut.title)
             }
         }
         return failed
     }
 
     func fire(_ id: UInt32) {
-        guard Self.bindings.indices.contains(Int(id)) else { return }
-        onCommand?(Self.bindings[Int(id)].command)
+        guard shortcuts.indices.contains(Int(id)) else { return }
+        onCommand?(shortcuts[Int(id)].command)
     }
 
     private func installHandlerIfNeeded() {

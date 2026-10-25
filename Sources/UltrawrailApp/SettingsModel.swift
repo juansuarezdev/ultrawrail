@@ -13,6 +13,7 @@ final class SettingsModel: ObservableObject {
     private let layoutStore = LayoutSettingsStore()
     private let templateStore = TemplateStore()
     private let excludedAppsStore = ExcludedAppsStore()
+    private let shortcutStore = ShortcutStore()
     private var loading = true
 
     var onChange: (() -> Void)?
@@ -41,6 +42,9 @@ final class SettingsModel: ObservableObject {
     @Published var zoneCount: Int { didSet { commit() } }
     @Published var customTemplates: [Template] { didSet { commitTemplates() } }
     @Published var excludedApps: [String] { didSet { commitExcludedApps() } }
+    @Published var shortcutMap: ShortcutMap { didSet { commitShortcuts() } }
+    /// Set while a shortcut is being recorded so the global hotkeys do not swallow the keypress.
+    var recordingChanged: ((Bool) -> Void)?
     @Published var launchAtLogin: Bool {
         didSet {
             guard !loading, launchAtLogin != oldValue else { return }
@@ -72,6 +76,7 @@ final class SettingsModel: ObservableObject {
         zoneCount = layout.zoneCount
         customTemplates = templateStore.templates
         excludedApps = excludedAppsStore.apps
+        shortcutMap = shortcutStore.map
         launchAtLogin = SMAppService.mainApp.status == .enabled
         loading = false
     }
@@ -113,6 +118,13 @@ final class SettingsModel: ObservableObject {
     private func commitExcludedApps() {
         guard !loading else { return }
         excludedAppsStore.apps = excludedApps
+        onChange?()
+    }
+
+    /// Only the shortcuts changed: skip the other stores.
+    private func commitShortcuts() {
+        guard !loading else { return }
+        shortcutStore.map = shortcutMap
         onChange?()
     }
 

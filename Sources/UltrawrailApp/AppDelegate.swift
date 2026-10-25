@@ -32,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onChange = { [weak self] in self?.settingsChanged() }
+        model.recordingChanged = { [weak self] recording in
+            if recording { self?.controller?.suspendShortcuts() } else { self?.controller?.resumeShortcuts() }
+        }
         model.refreshOverviewHandler = { [weak self] in self?.refreshOverview() }
         model.moveWindowHandler = { [weak self] id, zone, page in self?.controller?.moveWindow(id, toZone: zone, page: page) }
         settingsWindow = SettingsWindowController(model: model)
@@ -99,6 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller?.newColumnWidth = model.newColumnWidth
         controller?.zoneCount = model.zoneCount
         controller?.excludedApps = Set(model.excludedApps)
+        if let controller, controller.shortcuts != model.shortcutMap { controller.reloadShortcuts(model.shortcutMap) }
         rebuildMenu()
     }
 
@@ -153,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.newColumnWidth = model.newColumnWidth
         controller.zoneCount = model.zoneCount
         controller.excludedApps = Set(model.excludedApps)
+        controller.shortcuts = model.shortcutMap
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         templatePanel = TemplatePanelController(
             controller: controller,
@@ -274,8 +279,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             legendMenu.addItem(item)
         }
         legendMenu.addItem(.separator())
-        for entry in ShortcutLegend.entries {
-            let line = NSMenuItem(title: ShortcutLegend.line(for: entry, style: style), action: nil, keyEquivalent: "")
+        for shortcut in model.shortcutMap.resolved {
+            let line = NSMenuItem(title: "\(shortcut.combo.display(style: style))  ·  \(shortcut.title)", action: nil, keyEquivalent: "")
             line.isEnabled = false
             legendMenu.addItem(line)
         }

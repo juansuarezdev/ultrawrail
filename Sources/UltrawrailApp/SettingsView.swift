@@ -116,6 +116,9 @@ private struct LayoutTab: View {
 
 private struct ShortcutsTab: View {
     @ObservedObject var model: SettingsModel
+    @State private var recordingID: String?
+    @State private var monitor: Any?
+    @State private var message: (id: String, text: String)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -125,11 +128,83 @@ private struct ShortcutsTab: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            List(ShortcutLegend.entries, id: \.title) { entry in
-                Text(ShortcutLegend.line(for: entry, style: model.keyboardStyle))
-                    .font(.system(.body, design: .monospaced))
+            List(model.shortcutMap.resolved, id: \.id) { shortcut in
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(shortcut.title)
+                        Spacer()
+                        Text(recordingID == shortcut.id ? "Pulsa el atajo…" : shortcut.combo.display(style: model.keyboardStyle))
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(recordingID == shortcut.id ? Color.accentColor : .primary)
+                        Button(recordingID == shortcut.id ? "Cancelar" : "Cambiar") {
+                            recordingID == shortcut.id ? stopRecording() : startRecording(shortcut.id)
+                        }
+                        Button("Restablecer") {
+                            message = nil
+                            model.shortcutMap.reset(shortcut.id)
+                        }
+                        .disabled(!model.shortcutMap.isCustomized(shortcut.id))
+                    }
+                    if let message, message.id == shortcut.id {
+                        Text(message.text).font(.caption).foregroundStyle(.red)
+                    }
+                }
+            }
+            HStack {
+                Text("Hacen falta al menos dos de Ctrl, Alt y Win. Esc cancela la grabación.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Restablecer todos") {
+                    message = nil
+                    model.shortcutMap.resetAll()
+                }
+                .disabled(model.shortcutMap.overrides.isEmpty)
             }
         }
         .padding()
+        .onDisappear { stopRecording() }
+    }
+
+    private func startRecording(_ id: String) {
+        stopRecording()
+        message = nil
+        recordingID = id
+        model.recordingChanged?(true)
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let flags = event.modifierFlags
+            if event.keyCode == 53, flags.intersection([.control, .option, .command, .shift]).isEmpty {
+                stopRecording()
+                return nil
+            }
+            let combo = KeyCombo(keyCode: Int(event.keyCode), control: flags.contains(.control),
+                                 option: flags.contains(.option), command: flags.contains(.command),
+                                 shift: flags.contains(.shift))
+            if let issue = model.shortcutMap.issue(for: combo, assigningTo: id) {
+                message = (id, Self.text(for: issue))
+            } else {
+                model.shortcutMap.assign(combo, to: id)
+                message = nil
+                stopRecording()
+            }
+            return nil
+        }
+    }
+
+    private func stopRecording() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        if recordingID != nil {
+            recordingID = nil
+            model.recordingChanged?(false)
+        }
+    }
+
+    private static func text(for issue: ShortcutIssue) -> String {
+        switch issue {
+        case .needsTwoModifiers: return "Usa al menos dos modificadores entre Ctrl, Alt y Win."
+        case .reservedBySystem: return "Ese atajo lo usa el sistema."
+        case .conflict(let title): return "Ya lo usa «\(title)»."
+        }
     }
 }

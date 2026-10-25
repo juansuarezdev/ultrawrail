@@ -140,3 +140,12 @@ Pasos adicionales:
 1. Con varias páginas, Ctrl+Alt+T muestra arriba ◀ "Zona Z · Página N de M" ▶; las flechas cambian de página sin cerrar el panel.
 2. El tablero muestra las ventanas de la página elegida y conserva la plantilla seleccionada.
 3. Aplicar solo reorganiza esa página.
+
+## Atajos personalizables
+
+1. Ajustes → Atajos: cada fila tiene "Cambiar" y "Restablecer". Pulsar "Cambiar" y un atajo nuevo lo asigna.
+2. Mientras se graba, los atajos globales no se disparan (probar pulsando uno existente: debe dar aviso de conflicto, no ejecutarlo).
+3. Un atajo con menos de dos modificadores entre Ctrl, Alt y Win se rechaza con mensaje; Esc cancela.
+4. El atajo nuevo funciona al instante y el antiguo deja de funcionar, sin reiniciar.
+5. Cerrar y reabrir Ultrawrail conserva los atajos cambiados; "Restablecer todos" vuelve a los de serie.
+6. El submenú "Atajos de teclado" de la barra de menús muestra los atajos en vigor.

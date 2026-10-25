@@ -46,7 +46,7 @@ final class FakeWindows: WindowService {
 @MainActor
 final class FakeHotkeys: HotkeyService {
     var onCommand: ((Command) -> Void)?
-    func register() -> [String] { [] }
+    func register(_ shortcuts: [ResolvedShortcut]) -> [String] { [] }
 }
 
 @MainActor
