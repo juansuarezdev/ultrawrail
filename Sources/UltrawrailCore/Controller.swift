@@ -8,25 +8,58 @@ public struct WorkspaceSnapshot: Equatable, Sendable {
     public let config: LayoutConfig
     public let page: Int
     public let pageCount: Int
+    public let zone: Int
+    public let zoneCount: Int
 
-    public init(workspace: Workspace, viewport: CGRect, config: LayoutConfig, page: Int = 0, pageCount: Int = 1) {
+    public init(workspace: Workspace, viewport: CGRect, config: LayoutConfig, page: Int = 0, pageCount: Int = 1,
+                zone: Int = 0, zoneCount: Int = 1) {
         self.workspace = workspace
         self.viewport = viewport
         self.config = config
         self.page = page
         self.pageCount = pageCount
+        self.zone = zone
+        self.zoneCount = zoneCount
     }
+}
+
+/// A vertical slice of the display with its own pages.
+struct Zone: Equatable {
+    var pages: [Workspace] = [Workspace()]
+    var currentPage = 0
 }
 
 @MainActor
 public final class Controller {
     public static let maxPages = 9
-    public private(set) var pages: [Workspace] = [Workspace()]
-    public private(set) var currentPage = 0
-    /// The current page's strip.
+    public static let maxZones = 3
+    private(set) var zones: [Zone] = [Zone()]
+    public private(set) var focusedZone = 0
+    /// Number of zones the display is split into (1...3). Shrinking moves the windows of the
+    /// removed zones to the last remaining zone's current page.
+    public var zoneCount: Int {
+        get { zones.count }
+        set {
+            let count = min(max(newValue, 1), Self.maxZones)
+            guard count != zones.count else { return }
+            resizeZones(to: count)
+            needsClamp = true
+            relayout(force: true)
+        }
+    }
+    /// The focused zone's pages.
+    public private(set) var pages: [Workspace] {
+        get { zones[focusedZone].pages }
+        set { zones[focusedZone].pages = newValue }
+    }
+    public private(set) var currentPage: Int {
+        get { zones[focusedZone].currentPage }
+        set { zones[focusedZone].currentPage = newValue }
+    }
+    /// The focused zone's current strip.
     public private(set) var workspace: Workspace {
-        get { pages[currentPage] }
-        set { pages[currentPage] = newValue }
+        get { zones[focusedZone].pages[zones[focusedZone].currentPage] }
+        set { zones[focusedZone].pages[zones[focusedZone].currentPage] = newValue }
     }
     public private(set) var failedHotkeys: [String] = []
     public var motion = MotionSettings()
@@ -37,7 +70,7 @@ public final class Controller {
     public var pendingCount: Int { pending.count }
     public var onShowTemplates: (() -> Void)?
     public var managedWindows: [WindowID] { workspace.allWindows }
-    private var allPageWindows: [WindowID] { pages.flatMap(\.allWindows) }
+    private var allPageWindows: [WindowID] { zones.flatMap { $0.pages.flatMap(\.allWindows) } }
 
     private let windows: WindowService
     private let hotkeys: HotkeyService
@@ -51,7 +84,11 @@ public final class Controller {
     }
     public var newColumnWidth: Double {
         get { workspace.newColumnWidth }
-        set { for index in pages.indices { pages[index].newColumnWidth = newValue } }
+        set {
+            for zone in zones.indices {
+                for page in zones[zone].pages.indices { zones[zone].pages[page].newColumnWidth = newValue }
+            }
+        }
     }
     private let animator: Animator?
     private let reduceMotion: () -> Bool
@@ -114,7 +151,7 @@ public final class Controller {
     public func applyTemplate(_ template: Template, assignment: [WindowID?]) {
         let onPage = Set(workspace.allWindows)
         guard assignment.allSatisfy({ $0.map(onPage.contains) ?? true }) else { return }
-        workspace.apply(template, assignment: assignment, viewport: windows.usableFrame(), config: config)
+        workspace.apply(template, assignment: assignment, viewport: focusedViewport(), config: config)
         relayout()
         if let id = workspace.focusedWindow { focusWindow(id) }
     }
@@ -135,10 +172,22 @@ public final class Controller {
         case .moveWindowToPreviousPage:
             if let id = workspace.focusedWindow, currentPage > 0 { moveFocusedWindow(id, to: currentPage - 1) }
             return
+        case .focusZoneLeft:
+            focusZone(focusedZone - 1)
+            return
+        case .focusZoneRight:
+            focusZone(focusedZone + 1)
+            return
+        case .moveWindowToZoneLeft:
+            if let id = workspace.focusedWindow { moveFocusedWindow(id, toZone: focusedZone - 1) }
+            return
+        case .moveWindowToZoneRight:
+            if let id = workspace.focusedWindow { moveFocusedWindow(id, toZone: focusedZone + 1) }
+            return
         default:
             break
         }
-        workspace.perform(command, viewport: windows.usableFrame(), config: config)
+        workspace.perform(command, viewport: focusedViewport(), config: config)
         relayout()
         if let id = workspace.focusedWindow { focusWindow(id) }
     }
@@ -165,14 +214,20 @@ public final class Controller {
                 pendingFocus = id
                 return
             }
-            if !workspace.contains(id), let index = pages.firstIndex(where: { $0.contains(id) }) {
-                if now() < suppressFocusEchoUntil { return }
-                pages[index].focus(window: id)
-                switchPage(to: index)
-                return
+            var switchedZone = false
+            if !workspace.contains(id), let (zone, page) = locate(id) {
+                if page != zones[zone].currentPage {
+                    if now() < suppressFocusEchoUntil { return }
+                    zones[zone].pages[page].focus(window: id)
+                    focusedZone = zone
+                    switchPage(to: page)
+                    return
+                }
+                focusedZone = zone
+                switchedZone = true
             }
             guard workspace.contains(id) else { return }
-            if animator?.isAnimating == true, id == workspace.focusedWindow { return }
+            if !switchedZone, animator?.isAnimating == true, id == workspace.focusedWindow { return }
             workspace.focus(window: id)
             lastApplied[id] = nil
             relayout()
@@ -191,29 +246,88 @@ public final class Controller {
             for (id, rect) in lastApplied { sizes[id] = rect.size }
             lastApplied.removeAll()
         }
-        let viewport = windows.usableFrame()
+        let full = windows.usableFrame()
         for id in allPageWindows where !windows.isAlive(id) { forget(id) }
-        Layout.reveal(&workspace, viewport: viewport, config: config)
-        if needsClamp {
-            Layout.removeOverscroll(&workspace, viewport: viewport, config: config)
-            needsClamp = false
+        var changed: [WindowID: CGRect] = [:]
+        var animated: [WindowID: CGRect] = [:]
+        for zone in zones.indices {
+            let viewport = zoneViewport(zone, in: full)
+            let page = zones[zone].currentPage
+            Layout.reveal(&zones[zone].pages[page], viewport: viewport, config: config)
+            if needsClamp {
+                Layout.removeOverscroll(&zones[zone].pages[page], viewport: viewport, config: config)
+            }
+            let targets = Layout.frames(zones[zone].pages[page], viewport: viewport, config: config)
+            let zoneChanged = targets.filter { lastApplied[$0.key] != $0.value }
+            changed.merge(zoneChanged) { $1 }
+            animated.merge(animatedSubset(of: zoneChanged, in: zones[zone].pages[page], viewport: viewport)) { $1 }
         }
-
-        let targets = Layout.frames(workspace, viewport: viewport, config: config)
-        let changed = targets.filter { lastApplied[$0.key] != $0.value }
-        let animated = animatedSubset(of: changed, viewport: viewport)
+        needsClamp = false
 
         var dropped = false
         for (id, rect) in changed.sorted(by: { $0.key.rawValue < $1.key.rawValue }) where animated[id] == nil {
             if !write(rect, to: id) { dropped = true }
         }
-        if force, !parkInactivePages(sizes: sizes, viewport: viewport) { dropped = true }
+        if force, !parkInactivePages(sizes: sizes, full: full) { dropped = true }
         if dropped {
             relayout()
             return
         }
         startAnimation(animated)
-        emitChange(viewport)
+        emitChange(zoneViewport(focusedZone, in: full))
+    }
+
+    // MARK: Zones
+
+    /// Zone `index` covers an equal-width vertical slice of `full`.
+    private func zoneViewport(_ index: Int, in full: CGRect) -> CGRect {
+        let width = full.width / CGFloat(zones.count)
+        return CGRect(x: full.minX + CGFloat(index) * width, y: full.minY, width: width, height: full.height)
+    }
+
+    private func focusedViewport() -> CGRect { zoneViewport(focusedZone, in: windows.usableFrame()) }
+
+    private func resizeZones(to count: Int) {
+        if count > zones.count {
+            let width = newColumnWidth
+            while zones.count < count {
+                var zone = Zone()
+                zone.pages[0].newColumnWidth = width
+                zones.append(zone)
+            }
+            return
+        }
+        let moved = zones[count...].flatMap { $0.pages.flatMap(\.allWindows) }
+        zones.removeLast(zones.count - count)
+        let last = count - 1
+        let page = zones[last].currentPage
+        for id in moved { zones[last].pages[page].addWindow(id) }
+        focusedZone = min(focusedZone, last)
+    }
+
+    /// Zone and page holding `id`.
+    private func locate(_ id: WindowID) -> (zone: Int, page: Int)? {
+        for (zone, value) in zones.enumerated() {
+            if let page = value.pages.firstIndex(where: { $0.contains(id) }) { return (zone, page) }
+        }
+        return nil
+    }
+
+    private func focusZone(_ target: Int) {
+        guard zones.indices.contains(target), target != focusedZone else { return }
+        focusedZone = target
+        relayout()
+        focusCurrent()
+    }
+
+    private func moveFocusedWindow(_ id: WindowID, toZone target: Int) {
+        guard zones.indices.contains(target), target != focusedZone else { return }
+        workspace.removeWindow(id)
+        focusedZone = target
+        workspace.addWindow(id)
+        needsClamp = true
+        relayout()
+        focusWindow(id)
     }
 
     // MARK: Writing
@@ -239,7 +353,7 @@ public final class Controller {
     private func applyAnimationFrame(_ frames: [WindowID: CGRect], finished: Bool) {
         var dropped = false
         for (id, rect) in frames.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
-            guard workspace.contains(id) else { continue }
+            guard zones.contains(where: { $0.pages[$0.currentPage].contains(id) }) else { continue }
             if windows.setFrame(rect, for: id, moveOnly: !finished) {
                 lastApplied[id] = rect
                 failures[id] = nil
@@ -258,7 +372,8 @@ public final class Controller {
 
     /// Windows that slide: same size, same y, not parked in both positions;
     /// at most `maxAnimated`, nearest to the focused column first.
-    private func animatedSubset(of changed: [WindowID: CGRect], viewport: CGRect) -> [WindowID: CGRect] {
+    private func animatedSubset(of changed: [WindowID: CGRect], in strip: Workspace,
+                                viewport: CGRect) -> [WindowID: CGRect] {
         guard animator != nil, motion.duration(reduceMotion: reduceMotion()) > 0 else { return [:] }
         let candidates = changed.filter { id, target in
             guard let from = lastApplied[id] else { return false }
@@ -266,9 +381,10 @@ public final class Controller {
                 && abs(from.minY - target.minY) < 0.5
                 && !(isOffscreen(from, in: viewport) && isOffscreen(target, in: viewport))
         }
-        let focused = workspace.focusedColumn
+        let focused = strip.focusedColumn
         let ranked = candidates.keys.sorted { lhs, rhs in
-            let (left, right) = (columnDistance(lhs, from: focused), columnDistance(rhs, from: focused))
+            let (left, right) = (columnDistance(lhs, in: strip, from: focused),
+                                 columnDistance(rhs, in: strip, from: focused))
             return left != right ? left < right : lhs.rawValue < rhs.rawValue
         }
         return Dictionary(uniqueKeysWithValues: ranked.prefix(Self.maxAnimated).map { ($0, candidates[$0]!) })
@@ -287,8 +403,8 @@ public final class Controller {
         rect.maxX <= viewport.minX + 1 || rect.minX >= viewport.maxX - 1
     }
 
-    private func columnDistance(_ id: WindowID, from focused: Int) -> Int {
-        guard let index = workspace.columns.firstIndex(where: { $0.windows.contains(id) }) else { return .max }
+    private func columnDistance(_ id: WindowID, in strip: Workspace, from focused: Int) -> Int {
+        guard let index = strip.columns.firstIndex(where: { $0.windows.contains(id) }) else { return .max }
         return abs(index - focused)
     }
 
@@ -296,7 +412,8 @@ public final class Controller {
 
     private func emitChange(_ viewport: CGRect) {
         let snapshot = WorkspaceSnapshot(workspace: workspace, viewport: viewport, config: config,
-                                     page: currentPage, pageCount: pages.count)
+                                     page: currentPage, pageCount: pages.count,
+                                     zone: focusedZone, zoneCount: zones.count)
         guard snapshot != lastSnapshot else { return }
         lastSnapshot = snapshot
         onChange?(snapshot)
@@ -348,16 +465,19 @@ public final class Controller {
         relayout(force: true)
     }
 
-    /// Moves every inactive page's windows off the right edge, keeping their size.
+    /// Moves every inactive page's windows off the right edge of its zone, keeping their size.
     /// Returns false when some window was dropped after repeated failures.
-    private func parkInactivePages(sizes: [WindowID: CGSize], viewport: CGRect) -> Bool {
+    private func parkInactivePages(sizes: [WindowID: CGSize], full: CGRect) -> Bool {
         var ok = true
-        for (index, page) in pages.enumerated() where index != currentPage {
-            for id in page.allWindows {
-                let size = sizes[id]
-                let rect = CGRect(x: viewport.maxX - 1, y: viewport.minY,
-                                  width: size?.width ?? 200, height: size?.height ?? viewport.height)
-                if !write(rect, to: id) { ok = false }
+        for (zone, value) in zones.enumerated() {
+            let viewport = zoneViewport(zone, in: full)
+            for (index, page) in value.pages.enumerated() where index != value.currentPage {
+                for id in page.allWindows {
+                    let size = sizes[id]
+                    let rect = CGRect(x: viewport.maxX - 1, y: viewport.minY,
+                                      width: size?.width ?? 200, height: size?.height ?? viewport.height)
+                    if !write(rect, to: id) { ok = false }
+                }
             }
         }
         return ok
@@ -365,10 +485,13 @@ public final class Controller {
 
     /// Puts every inactive page's windows where its own layout would place them (used on quit).
     public func restoreParkedWindows() {
-        let viewport = windows.usableFrame()
-        for (index, page) in pages.enumerated() where index != currentPage {
-            for (id, rect) in Layout.frames(page, viewport: viewport, config: config) {
-                _ = windows.setFrame(rect, for: id, moveOnly: false)
+        let full = windows.usableFrame()
+        for (zone, value) in zones.enumerated() {
+            let viewport = zoneViewport(zone, in: full)
+            for (index, page) in value.pages.enumerated() where index != value.currentPage {
+                for (id, rect) in Layout.frames(page, viewport: viewport, config: config) {
+                    _ = windows.setFrame(rect, for: id, moveOnly: false)
+                }
             }
         }
     }
@@ -386,7 +509,9 @@ public final class Controller {
     }
 
     private func forget(_ id: WindowID) {
-        for index in pages.indices { pages[index].removeWindow(id) }
+        for zone in zones.indices {
+            for page in zones[zone].pages.indices { zones[zone].pages[page].removeWindow(id) }
+        }
         lastApplied[id] = nil
         failures[id] = nil
         needsClamp = true

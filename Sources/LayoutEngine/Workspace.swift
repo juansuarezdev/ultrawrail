@@ -118,7 +118,8 @@ public struct Workspace: Equatable, Sendable {
         case .moveColumnRight:
             moveColumn(by: 1)
         case .centerColumn, .showTemplates, .adoptWindow,
-             .previousPage, .nextPage, .moveWindowToPreviousPage, .moveWindowToNextPage:
+             .previousPage, .nextPage, .moveWindowToPreviousPage, .moveWindowToNextPage,
+             .focusZoneLeft, .focusZoneRight, .moveWindowToZoneLeft, .moveWindowToZoneRight:
             break
         }
     }
