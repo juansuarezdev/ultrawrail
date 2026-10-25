@@ -13,12 +13,15 @@ struct WindowChip {
 final class TemplateBoardView: NSView {
     var board: TemplateBoard { didSet { needsDisplay = true } }
     private let chips: [WindowID: WindowChip]
+    private let templates: [Template]
+    private var cardScroll: CGFloat = 0 { didSet { needsDisplay = true } }
     private var dragCandidate: WindowID?
     private var dragOrigin: NSPoint = .zero
 
-    init(board: TemplateBoard, chips: [WindowID: WindowChip]) {
+    init(board: TemplateBoard, chips: [WindowID: WindowChip], templates: [Template]) {
         self.board = board
         self.chips = chips
+        self.templates = templates
         super.init(frame: NSRect(x: 0, y: 0, width: 560, height: 330))
         registerForDraggedTypes([windowDragType])
     }
@@ -30,7 +33,7 @@ final class TemplateBoardView: NSView {
     // MARK: geometry
 
     private func cardRect(_ index: Int) -> NSRect {
-        NSRect(x: 16 + CGFloat(index) * 162, y: 16, width: 150, height: 70)
+        NSRect(x: 16 + CGFloat(index) * 162 - cardScroll, y: 16, width: 150, height: 70)
     }
 
     private let slotArea = NSRect(x: 16, y: 100, width: 330, height: 190)
@@ -72,9 +75,12 @@ final class TemplateBoardView: NSView {
     // MARK: drawing
 
     override func draw(_ dirtyRect: NSRect) {
-        for (index, template) in Template.all.enumerated() {
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(rect: NSRect(x: 0, y: 8, width: bounds.width, height: 86)).addClip()
+        for (index, template) in templates.enumerated() {
             drawCard(template, in: cardRect(index), selected: template.id == board.template.id)
         }
+        NSGraphicsContext.restoreGraphicsState()
         for (index, rect) in slotRects().enumerated() {
             let path = NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8)
             NSColor.quaternaryLabelColor.setFill()
@@ -120,6 +126,13 @@ final class TemplateBoardView: NSView {
 
     override func scrollWheel(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        if point.y < 100 {
+            let maxScroll = max(0, CGFloat(templates.count) * 162 + 16 - bounds.width)
+            guard maxScroll > 0 else { return super.scrollWheel(with: event) }
+            let delta = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) ? event.scrollingDeltaX : event.scrollingDeltaY
+            cardScroll = min(maxScroll, max(0, cardScroll - delta))
+            return
+        }
         guard listArea.contains(point), maxListScroll > 0 else { return }
         listScroll = min(maxListScroll, max(0, listScroll - event.scrollingDeltaY * (event.hasPreciseScrollingDeltas ? 1 : 8)))
     }
@@ -204,9 +217,11 @@ final class TemplateBoardView: NSView {
     override func mouseDown(with event: NSEvent) {
         dragCandidate = nil
         let point = convert(event.locationInWindow, from: nil)
-        for (index, template) in Template.all.enumerated() where cardRect(index).contains(point) {
-            board.select(template)
-            return
+        if point.y < 100 {
+            for (index, template) in templates.enumerated() where cardRect(index).contains(point) {
+                board.select(template)
+                return
+            }
         }
         dragCandidate = windowAt(point)
         dragOrigin = point

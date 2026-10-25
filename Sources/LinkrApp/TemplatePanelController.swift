@@ -5,11 +5,13 @@ import LinkrCore
 @MainActor
 final class TemplatePanelController: NSObject {
     private let controller: Controller
+    private let templates: () -> [Template]
     private var panel: NSPanel?
     private var boardView: TemplateBoardView?
 
-    init(controller: Controller) {
+    init(controller: Controller, templates: @escaping () -> [Template]) {
         self.controller = controller
+        self.templates = templates
         super.init()
     }
 
@@ -31,8 +33,9 @@ final class TemplatePanelController: NSObject {
             let icon = description.flatMap { NSRunningApplication(processIdentifier: pid_t($0.pid))?.icon }
             chips[id] = WindowChip(id: id, name: description?.appName ?? "Ventana", icon: icon)
         }
-        let board = TemplateBoard(template: Template.all[0], windows: ids)
-        let boardView = TemplateBoardView(board: board, chips: chips)
+        let available = templates()
+        let board = TemplateBoard(template: available.first ?? Template.all[0], windows: ids)
+        let boardView = TemplateBoardView(board: board, chips: chips, templates: available)
         self.boardView = boardView
 
         let content = NSView(frame: NSRect(x: 0, y: 0, width: 560, height: 380))

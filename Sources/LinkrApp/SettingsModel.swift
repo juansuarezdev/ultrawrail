@@ -10,6 +10,7 @@ final class SettingsModel: ObservableObject {
     private let placementStore = PlacementStore()
     private let keyboardStore = KeyboardStyleStore()
     private let layoutStore = LayoutSettingsStore()
+    private let templateStore = TemplateStore()
     private var loading = true
 
     var onChange: (() -> Void)?
@@ -21,6 +22,7 @@ final class SettingsModel: ObservableObject {
     @Published var gap: Double { didSet { commit() } }
     @Published var outerGap: Double { didSet { commit() } }
     @Published var newColumnWidth: Double { didSet { commit() } }
+    @Published var customTemplates: [Template] { didSet { commit() } }
     @Published var launchAtLogin: Bool {
         didSet {
             guard !loading, launchAtLogin != oldValue else { return }
@@ -46,6 +48,7 @@ final class SettingsModel: ObservableObject {
         gap = layout.gap
         outerGap = layout.outerGap
         newColumnWidth = layout.newColumnWidth
+        customTemplates = templateStore.templates
         launchAtLogin = SMAppService.mainApp.status == .enabled
         loading = false
     }
@@ -66,6 +69,34 @@ final class SettingsModel: ObservableObject {
         placementStore.mode = placement
         keyboardStore.style = keyboardStyle
         layoutStore.settings = LayoutSettings(gap: gap, outerGap: outerGap, newColumnWidth: newColumnWidth)
+        templateStore.templates = customTemplates
         onChange?()
+    }
+
+    var allTemplates: [Template] { TemplateLibrary.all(custom: customTemplates) }
+
+    @discardableResult
+    func newTemplate() -> Template {
+        let template = Template(id: "custom-" + UUID().uuidString, name: "Nueva plantilla",
+                                columns: [TemplateColumn(width: 0.5, slots: 1), TemplateColumn(width: 0.5, slots: 1)])
+        customTemplates.append(template)
+        return template
+    }
+
+    @discardableResult
+    func duplicate(_ source: Template) -> Template {
+        let copy = Template(id: "custom-" + UUID().uuidString, name: "Copia de " + source.name,
+                            columns: TemplateDraft(columns: source.columns).columns)
+        customTemplates.append(copy)
+        return copy
+    }
+
+    func update(_ template: Template) {
+        guard let index = customTemplates.firstIndex(where: { $0.id == template.id }) else { return }
+        customTemplates[index] = template
+    }
+
+    func deleteTemplate(id: String) {
+        customTemplates.removeAll { $0.id == id }
     }
 }

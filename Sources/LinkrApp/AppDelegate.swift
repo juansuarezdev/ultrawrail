@@ -119,7 +119,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.placement = model.placement
         controller.newColumnWidth = model.newColumnWidth
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
-        templatePanel = TemplatePanelController(controller: controller)
+        templatePanel = TemplatePanelController(
+            controller: controller,
+            templates: { [weak self] in self?.model.allTemplates ?? Template.builtIn }
+        )
         controller.onShowTemplates = { [weak self] in self?.templatePanel?.toggle() }
         controller.start()
         self.controller = controller
