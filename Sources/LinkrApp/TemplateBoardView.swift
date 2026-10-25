@@ -35,6 +35,13 @@ final class TemplateBoardView: NSView {
 
     private let slotArea = NSRect(x: 16, y: 100, width: 330, height: 190)
     private let listArea = NSRect(x: 366, y: 100, width: 178, height: 190)
+    private let listPitch: CGFloat = 40
+    private static let scrollerWidth: CGFloat = 8
+    private var listScroll: CGFloat = 0 { didSet { needsDisplay = true } }
+
+    private var maxListScroll: CGFloat {
+        max(0, CGFloat(board.windows.count) * listPitch - 6 - listArea.height)
+    }
 
     /// One rect per slot, in slot order: columns split `slotArea` by their width share.
     private func slotRects() -> [NSRect] {
@@ -56,10 +63,8 @@ final class TemplateBoardView: NSView {
     }
 
     private func chipRect(inList index: Int) -> NSRect {
-        // Chips shrink their pitch so a long window list still fits inside the list area.
-        let count = board.windows.count
-        let pitch = count > 1 ? min(40, (listArea.height - 34) / CGFloat(count - 1)) : 40
-        return NSRect(x: listArea.minX, y: listArea.minY + CGFloat(index) * pitch, width: listArea.width, height: 34)
+        NSRect(x: listArea.minX, y: listArea.minY + CGFloat(index) * listPitch - listScroll,
+               width: listArea.width - Self.scrollerWidth, height: 34)
     }
 
     private func listChips() -> [WindowID] { board.windows }
@@ -83,6 +88,12 @@ final class TemplateBoardView: NSView {
                 draw(text: "Hueco \(index + 1)", in: rect, color: .tertiaryLabelColor, centered: true)
             }
         }
+        draw(text: "Huecos", in: NSRect(x: 16, y: 86, width: 330, height: 14), color: .secondaryLabelColor, centered: false)
+        draw(text: "Ventanas (arrastra a un hueco)", in: NSRect(x: listArea.minX, y: 86, width: listArea.width, height: 14),
+             color: .secondaryLabelColor, centered: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(rect: listArea).addClip()
+        defer { NSGraphicsContext.restoreGraphicsState(); drawScroller() }
         for (index, id) in listChips().enumerated() {
             guard let chip = chips[id] else { continue }
             let placed = !board.unassigned.contains(id)
@@ -93,6 +104,24 @@ final class TemplateBoardView: NSView {
             let text = extra == 1 ? "1 ventana irá a una columna extra" : "\(extra) ventanas irán a columnas extra"
             draw(text: text, in: NSRect(x: 16, y: 298, width: 330, height: 20), color: .secondaryLabelColor, centered: false)
         }
+    }
+
+    private func drawScroller() {
+        guard maxListScroll > 0 else { return }
+        let track = NSRect(x: listArea.maxX - Self.scrollerWidth + 2, y: listArea.minY, width: 4, height: listArea.height)
+        let content = CGFloat(board.windows.count) * listPitch - 6
+        let thumbHeight = max(24, track.height * listArea.height / content)
+        let thumbY = track.minY + (track.height - thumbHeight) * (listScroll / maxListScroll)
+        NSColor.quaternaryLabelColor.setFill()
+        NSBezierPath(roundedRect: track, xRadius: 2, yRadius: 2).fill()
+        NSColor.secondaryLabelColor.setFill()
+        NSBezierPath(roundedRect: NSRect(x: track.minX, y: thumbY, width: track.width, height: thumbHeight), xRadius: 2, yRadius: 2).fill()
+    }
+
+    override func scrollWheel(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        guard listArea.contains(point), maxListScroll > 0 else { return }
+        listScroll = min(maxListScroll, max(0, listScroll - event.scrollingDeltaY * (event.hasPreciseScrollingDeltas ? 1 : 8)))
     }
 
     private func drawCard(_ template: Template, in rect: NSRect, selected: Bool) {
@@ -162,7 +191,7 @@ final class TemplateBoardView: NSView {
         for (index, rect) in slotRects().enumerated() where rect.contains(point) {
             if let id = board.assignment[index] { return id }
         }
-        for (index, id) in listChips().enumerated().reversed() where chipRect(inList: index).contains(point) {
+        for (index, id) in listChips().enumerated().reversed() where listArea.contains(point) && chipRect(inList: index).contains(point) {
             return id
         }
         return nil
