@@ -5,17 +5,28 @@ public struct WorkspaceSnapshot: Equatable, Sendable {
     public let workspace: Workspace
     public let viewport: CGRect
     public let config: LayoutConfig
+    public let page: Int
+    public let pageCount: Int
 
-    public init(workspace: Workspace, viewport: CGRect, config: LayoutConfig) {
+    public init(workspace: Workspace, viewport: CGRect, config: LayoutConfig, page: Int = 0, pageCount: Int = 1) {
         self.workspace = workspace
         self.viewport = viewport
         self.config = config
+        self.page = page
+        self.pageCount = pageCount
     }
 }
 
 @MainActor
 public final class Controller {
-    public private(set) var workspace = Workspace()
+    public static let maxPages = 9
+    public private(set) var pages: [Workspace] = [Workspace()]
+    public private(set) var currentPage = 0
+    /// The current page's strip.
+    public private(set) var workspace: Workspace {
+        get { pages[currentPage] }
+        set { pages[currentPage] = newValue }
+    }
     public private(set) var failedHotkeys: [String] = []
     public var motion = MotionSettings()
     public var onChange: ((WorkspaceSnapshot) -> Void)?
@@ -25,6 +36,7 @@ public final class Controller {
     public var pendingCount: Int { pending.count }
     public var onShowTemplates: (() -> Void)?
     public var managedWindows: [WindowID] { workspace.allWindows }
+    private var allPageWindows: [WindowID] { pages.flatMap(\.allWindows) }
 
     private let windows: WindowService
     private let hotkeys: HotkeyService
@@ -94,6 +106,22 @@ public final class Controller {
     public func handle(_ command: Command) {
         if command == .showTemplates { onShowTemplates?(); return }
         if command == .adoptWindow { adoptPending(); return }
+        switch command {
+        case .nextPage:
+            if let target = nextPageTarget() { switchPage(to: target); focusCurrent() }
+            return
+        case .previousPage:
+            if currentPage > 0 { switchPage(to: currentPage - 1); focusCurrent() }
+            return
+        case .moveWindowToNextPage:
+            if let id = workspace.focusedWindow, let target = nextPageTarget() { moveFocusedWindow(id, to: target) }
+            return
+        case .moveWindowToPreviousPage:
+            if let id = workspace.focusedWindow, currentPage > 0 { moveFocusedWindow(id, to: currentPage - 1) }
+            return
+        default:
+            break
+        }
         workspace.perform(command, viewport: windows.usableFrame(), config: config)
         relayout()
         if let id = workspace.focusedWindow { windows.focus(id) }
@@ -121,6 +149,11 @@ public final class Controller {
                 pendingFocus = id
                 return
             }
+            if !workspace.contains(id), let index = pages.firstIndex(where: { $0.contains(id) }) {
+                pages[index].focus(window: id)
+                switchPage(to: index)
+                return
+            }
             guard workspace.contains(id) else { return }
             if animator?.isAnimating == true, id == workspace.focusedWindow { return }
             workspace.focus(window: id)
@@ -138,7 +171,7 @@ public final class Controller {
         animator?.cancel()
         if force { lastApplied.removeAll() }
         let viewport = windows.usableFrame()
-        for id in workspace.allWindows where !windows.isAlive(id) { forget(id) }
+        for id in allPageWindows where !windows.isAlive(id) { forget(id) }
         Layout.reveal(&workspace, viewport: viewport, config: config)
         if needsClamp {
             Layout.removeOverscroll(&workspace, viewport: viewport, config: config)
@@ -240,7 +273,8 @@ public final class Controller {
     // MARK: Model
 
     private func emitChange(_ viewport: CGRect) {
-        let snapshot = WorkspaceSnapshot(workspace: workspace, viewport: viewport, config: config)
+        let snapshot = WorkspaceSnapshot(workspace: workspace, viewport: viewport, config: config,
+                                     page: currentPage, pageCount: pages.count)
         guard snapshot != lastSnapshot else { return }
         lastSnapshot = snapshot
         onChange?(snapshot)
@@ -270,8 +304,52 @@ public final class Controller {
         workspace.addWindow(info.id)
     }
 
+    // MARK: Pages
+
+    /// Index of the page `.nextPage` goes to, appending an empty one when allowed.
+    private func nextPageTarget() -> Int? {
+        if currentPage + 1 < pages.count { return currentPage + 1 }
+        guard !workspace.allWindows.isEmpty, pages.count < Self.maxPages else { return nil }
+        var page = Workspace()
+        page.newColumnWidth = workspace.newColumnWidth
+        pages.append(page)
+        return pages.count - 1
+    }
+
+    private func switchPage(to target: Int) {
+        animator?.cancel()
+        var sizes: [WindowID: CGSize] = [:]
+        for id in allPageWindows { sizes[id] = lastApplied[id]?.size }
+        currentPage = target
+        while pages.count > 1, pages.count - 1 != currentPage, pages[pages.count - 1].allWindows.isEmpty {
+            pages.removeLast()
+        }
+        relayout(force: true)
+        let viewport = windows.usableFrame()
+        for (index, page) in pages.enumerated() where index != currentPage {
+            for id in page.allWindows {
+                let size = sizes[id] ?? nil
+                let rect = CGRect(x: viewport.maxX - 1, y: viewport.minY,
+                                  width: size?.width ?? 200, height: size?.height ?? viewport.height)
+                if windows.setFrame(rect, for: id, moveOnly: false) { lastApplied[id] = rect }
+            }
+        }
+    }
+
+    private func moveFocusedWindow(_ id: WindowID, to target: Int) {
+        pages[currentPage].removeWindow(id)
+        pages[target].addWindow(id)
+        needsClamp = true
+        switchPage(to: target)
+        windows.focus(id)
+    }
+
+    private func focusCurrent() {
+        if let id = workspace.focusedWindow { windows.focus(id) }
+    }
+
     private func forget(_ id: WindowID) {
-        workspace.removeWindow(id)
+        for index in pages.indices { pages[index].removeWindow(id) }
         lastApplied[id] = nil
         failures[id] = nil
         needsClamp = true
