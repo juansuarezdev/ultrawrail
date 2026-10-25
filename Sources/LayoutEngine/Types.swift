@@ -4,12 +4,21 @@ public struct WindowID: Hashable, Sendable, ExpressibleByIntegerLiteral {
     public init(integerLiteral value: Int) { self.rawValue = value }
 }
 
+public enum FocusMode: String, Sendable { case minimal, centered }
+
 public struct LayoutConfig: Equatable, Sendable {
     public var gap: Double
     public var outerGap: Double
-    public init(gap: Double = 8, outerGap: Double = 8) {
+    public var focusMode: FocusMode
+    public var maxColumnWidth: Double
+    public var centerStrip: Bool
+    public init(gap: Double = 8, outerGap: Double = 8, focusMode: FocusMode = .minimal,
+                maxColumnWidth: Double = 0, centerStrip: Bool = false) {
         self.gap = gap
         self.outerGap = outerGap
+        self.focusMode = focusMode
+        self.maxColumnWidth = maxColumnWidth
+        self.centerStrip = centerStrip
     }
 }
 

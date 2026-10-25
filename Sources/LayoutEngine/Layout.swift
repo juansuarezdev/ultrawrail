@@ -2,7 +2,8 @@ import CoreGraphics
 
 public enum Layout {
     static func columnWidth(_ column: Column, viewport: CGRect, config: LayoutConfig) -> Double {
-        column.width * (viewport.width - 2 * config.outerGap + config.gap) - config.gap
+        let value = column.width * (viewport.width - 2 * config.outerGap + config.gap) - config.gap
+        return config.maxColumnWidth > 0 ? min(value, config.maxColumnWidth) : value
     }
 
     /// X of the column's left edge in strip coordinates (0 = strip origin).
@@ -17,6 +18,12 @@ public enum Layout {
     /// Smallest scroll change that makes the focused column fully visible.
     public static func reveal(_ ws: inout Workspace, viewport: CGRect, config: LayoutConfig) {
         guard ws.columns.indices.contains(ws.focusedColumn) else { return }
+        if config.focusMode == .centered {
+            center(&ws, viewport: viewport, config: config)
+            let maxScroll = max(0, stripWidth(ws, viewport: viewport, config: config) - viewport.width)
+            ws.scrollOffset = min(max(ws.scrollOffset, 0), maxScroll)
+            return
+        }
         let left = stripX(of: ws.focusedColumn, in: ws, viewport: viewport, config: config)
         let right = left + columnWidth(ws.columns[ws.focusedColumn], viewport: viewport, config: config)
         if left - config.outerGap < ws.scrollOffset {
@@ -51,9 +58,11 @@ public enum Layout {
     /// y relative to the viewport's top edge. Nothing is parked here.
     public static func stripRects(_ ws: Workspace, viewport: CGRect, config: LayoutConfig) -> [WindowID: CGRect] {
         var result: [WindowID: CGRect] = [:]
+        let total = stripWidth(ws, viewport: viewport, config: config)
+        let shift = config.centerStrip && total < viewport.width ? (viewport.width - total) / 2 : 0
         for (index, column) in ws.columns.enumerated() {
             let width = columnWidth(column, viewport: viewport, config: config)
-            let x = stripX(of: index, in: ws, viewport: viewport, config: config)
+            let x = stripX(of: index, in: ws, viewport: viewport, config: config) + shift
             let count = Double(column.windows.count)
             let height = max((viewport.height - 2 * config.outerGap - (count - 1) * config.gap) / count, 1)
             for (row, id) in column.windows.enumerated() {
