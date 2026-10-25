@@ -55,6 +55,7 @@ final class CarbonHotkeyService: HotkeyService {
         Binding(name: "⌃⌥⇧←", keyCode: kVK_LeftArrow, command: .moveColumnLeft, shift: true),
         Binding(name: "⌃⌥⇧L", keyCode: kVK_ANSI_L, command: .moveColumnRight, shift: true),
         Binding(name: "⌃⌥⇧→", keyCode: kVK_RightArrow, command: .moveColumnRight, shift: true),
+        Binding(name: "⌃⌥A", keyCode: kVK_ANSI_A, command: .adoptWindow),
         Binding(name: "⌃⌥T", keyCode: kVK_ANSI_T, command: .showTemplates),
     ]
 

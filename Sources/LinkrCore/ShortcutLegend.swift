@@ -23,6 +23,7 @@ public enum ShortcutLegend {
         ShortcutLegendEntry(keys: ["]"], shift: false, title: "Sacar de la pila"),
         ShortcutLegendEntry(keys: ["H", "←"], shift: true, title: "Mover columna a la izquierda"),
         ShortcutLegendEntry(keys: ["L", "→"], shift: true, title: "Mover columna a la derecha"),
+        ShortcutLegendEntry(keys: ["A"], shift: false, title: "Añadir ventana nueva a la tira"),
         ShortcutLegendEntry(keys: ["T"], shift: false, title: "Panel de plantillas"),
     ]
 

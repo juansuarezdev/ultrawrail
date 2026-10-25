@@ -24,7 +24,7 @@ final class ShortcutLegendTests: XCTestCase {
 
     func testEveryCommandShortcutIsListed() {
         let titles = ShortcutLegend.entries.map(\.title)
-        XCTAssertEqual(titles.count, 12)
+        XCTAssertEqual(titles.count, 13)
         XCTAssertTrue(titles.contains("Panel de plantillas"))
     }
 }

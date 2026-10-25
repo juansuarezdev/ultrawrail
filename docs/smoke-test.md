@@ -54,6 +54,13 @@ Pasos adicionales:
 1. El menú tiene "Atajos de teclado" con un submenú: "Teclado Windows" (por defecto) y "Teclado Mac", con la elegida marcada, y debajo los 12 atajos (Ctrl+Alt+... o ⌃⌥...).
 2. Cambiar de teclado cambia el texto de todas las líneas y se recuerda al reabrir la app.
 
+## Ventanas nuevas
+
+1. Por defecto el modo es Manual (menú, "Ventanas nuevas"). Abre una ventana nueva: las demás no se mueven.
+2. Con la ventana nueva enfocada, Ctrl+Alt+A la añade a la derecha de la columna enfocada y la tira se recoloca.
+3. En modo Automático, una ventana nueva entra sola. Al pasar de Manual a Automático entran las pendientes.
+4. En el panel de plantillas, con muchas ventanas la lista de la derecha tiene scroll con la rueda o el trackpad.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

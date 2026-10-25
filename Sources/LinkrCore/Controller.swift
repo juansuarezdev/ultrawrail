@@ -19,6 +19,10 @@ public final class Controller {
     public private(set) var failedHotkeys: [String] = []
     public var motion = MotionSettings()
     public var onChange: ((WorkspaceSnapshot) -> Void)?
+    public var placement: PlacementMode = .automatic {
+        didSet { if placement == .automatic, oldValue == .manual { adoptAllPending() } }
+    }
+    public var pendingCount: Int { pending.count }
     public var onShowTemplates: (() -> Void)?
     public var managedWindows: [WindowID] { workspace.allWindows }
 
@@ -31,6 +35,8 @@ public final class Controller {
     private var lastApplied: [WindowID: CGRect] = [:]
     private var animationTargets: [WindowID: CGRect] = [:]
     private var failures: [WindowID: Int] = [:]
+    private var pending: [WindowID: WindowInfo] = [:]
+    private var pendingFocus: WindowID?
     private var lastSnapshot: WorkspaceSnapshot?
     private static let maxFailures = 3
     private static let maxAnimated = 4
@@ -76,6 +82,7 @@ public final class Controller {
 
     public func handle(_ command: Command) {
         if command == .showTemplates { onShowTemplates?(); return }
+        if command == .adoptWindow { adoptPending(); return }
         workspace.perform(command, viewport: windows.usableFrame(), config: config)
         relayout()
         if let id = workspace.focusedWindow { windows.focus(id) }
@@ -84,12 +91,25 @@ public final class Controller {
     public func handle(_ event: WindowEvent) {
         switch event {
         case .opened(let info):
+            if placement == .manual, info.isManageable, !workspace.contains(info.id) {
+                pending[info.id] = info
+                pendingFocus = info.id
+                return
+            }
             adopt(info)
             relayout()
         case .closed(let id):
+            if pending.removeValue(forKey: id) != nil {
+                if pendingFocus == id { pendingFocus = nil }
+                return
+            }
             forget(id)
             relayout()
         case .focused(let id):
+            if pending[id] != nil {
+                pendingFocus = id
+                return
+            }
             guard workspace.contains(id) else { return }
             if animator?.isAnimating == true, id == workspace.focusedWindow { return }
             workspace.focus(window: id)
@@ -213,6 +233,25 @@ public final class Controller {
         guard snapshot != lastSnapshot else { return }
         lastSnapshot = snapshot
         onChange?(snapshot)
+    }
+
+    /// Places the pending window that was opened or focused last into the strip.
+    private func adoptPending() {
+        guard let id = pendingFocus ?? pending.keys.first, let info = pending[id] else { return }
+        pending[id] = nil
+        pendingFocus = nil
+        guard windows.isAlive(id) else { return }
+        adopt(info)
+        relayout()
+        windows.focus(id)
+    }
+
+    private func adoptAllPending() {
+        let infos = pending.values.sorted { $0.id.rawValue < $1.id.rawValue }
+        pending = [:]
+        pendingFocus = nil
+        for info in infos where windows.isAlive(info.id) { adopt(info) }
+        relayout()
     }
 
     private func adopt(_ info: WindowInfo) {

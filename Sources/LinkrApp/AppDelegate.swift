@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
     private let settingsStore = MotionSettingsStore()
     private let keyboardStore = KeyboardStyleStore()
+    private let placementStore = PlacementStore()
     private var controller: Controller?
     private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
@@ -75,6 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             reduceMotion: { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
         )
         controller.motion = settingsStore.settings
+        controller.placement = placementStore.mode
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         templatePanel = TemplatePanelController(controller: controller)
         controller.onShowTemplates = { [weak self] in self?.templatePanel?.toggle() }
@@ -145,6 +147,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             speedItem.submenu = speedMenu
             menu.addItem(speedItem)
 
+            let placementItem = NSMenuItem(title: "Ventanas nuevas", action: nil, keyEquivalent: "")
+            let placementMenu = NSMenu()
+            for (mode, title) in [(PlacementMode.manual, "Manual (Ctrl+Alt+A para añadir)"), (.automatic, "Automático")] {
+                let item = NSMenuItem(title: title, action: #selector(selectPlacement(_:)), keyEquivalent: "")
+                item.representedObject = mode.rawValue
+                item.state = placementStore.mode == mode ? .on : .off
+                item.target = self
+                placementMenu.addItem(item)
+            }
+            placementItem.submenu = placementMenu
+            menu.addItem(placementItem)
+
             let reduce = NSMenuItem(title: "Respetar Reducir movimiento del sistema", action: #selector(toggleReduceMotion), keyEquivalent: "")
             reduce.state = settings.respectReduceMotion ? .on : .off
             reduce.target = self
@@ -202,6 +216,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var settings = settingsStore.settings
         settings.speed = speed
         apply(settings)
+    }
+
+    @objc private func selectPlacement(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let mode = PlacementMode(rawValue: raw) else { return }
+        placementStore.mode = mode
+        controller?.placement = mode
+        rebuildMenu()
     }
 
     @objc private func selectKeyboardStyle(_ sender: NSMenuItem) {

@@ -19,6 +19,7 @@ public enum Command: Equatable, Sendable {
     case stackLeft, unstack
     case moveColumnLeft, moveColumnRight
     case showTemplates
+    case adoptWindow
 }
 
 public enum WidthPreset {
