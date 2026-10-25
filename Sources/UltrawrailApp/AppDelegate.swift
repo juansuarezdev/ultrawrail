@@ -32,6 +32,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onChange = { [weak self] in self?.settingsChanged() }
+        model.refreshOverviewHandler = { [weak self] in self?.refreshOverview() }
+        model.moveWindowHandler = { [weak self] id, zone, page in self?.controller?.moveWindow(id, toZone: zone, page: page) }
         settingsWindow = SettingsWindowController(model: model)
         statusItem.button?.image = menuBarImage()
         if AXIsProcessTrusted() {
@@ -71,6 +73,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         NSApp.mainMenu = mainMenu
         NSApp.windowsMenu = windowMenu
+    }
+
+    private func refreshOverview() {
+        guard let controller else {
+            model.overview = []
+            model.windowChips = [:]
+            return
+        }
+        let overview = controller.overview()
+        var chips: [WindowID: (name: String, icon: NSImage?)] = [:]
+        for id in overview.flatMap({ $0.pages.flatMap(\.windows) }) {
+            let description = controller.describe(id)
+            let icon = description.flatMap { NSRunningApplication(processIdentifier: pid_t($0.pid))?.icon }
+            chips[id] = (description?.appName ?? "Ventana", icon)
+        }
+        model.overview = overview
+        model.windowChips = chips
     }
 
     private func settingsChanged() {
@@ -158,6 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func workspaceChanged(_ snapshot: WorkspaceSnapshot) {
         lastSnapshot = snapshot
+        refreshOverview()
         previewView.animationDuration = model.motion.previewDuration(reduceMotion: reduceMotion)
         previewView.show(StripPreview(workspace: snapshot.workspace, viewport: snapshot.viewport, config: snapshot.config))
         statusLineItem?.title = statusText()

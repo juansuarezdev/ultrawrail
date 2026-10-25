@@ -11,6 +11,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             LayoutTab(model: model)
                 .tabItem { Label("Diseño", systemImage: "rectangle.split.3x1") }
+            PagesTab(model: model)
+                .tabItem { Label("Páginas", systemImage: "rectangle.stack") }
             TemplatesTab(model: model)
                 .tabItem { Label("Plantillas", systemImage: "square.split.2x1") }
             AppsTab(model: model)

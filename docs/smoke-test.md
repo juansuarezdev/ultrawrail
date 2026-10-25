@@ -117,6 +117,14 @@ Pasos adicionales:
 3. Las ventanas nuevas de una app excluida no entran.
 4. La lista persiste al reiniciar.
 
+## Pestaña Páginas
+
+1. Muestra cada zona y página con sus ventanas.
+2. Arrastrar una ventana a otra página la mueve y la aparca si no es la actual.
+3. Soltar en "Nueva página" crea la página.
+4. La página actual aparece resaltada y se actualiza al cambiar con Win+Alt+←/→.
+5. Con varias zonas aparece una sección por zona.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

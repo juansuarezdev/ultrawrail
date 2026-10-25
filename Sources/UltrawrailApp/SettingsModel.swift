@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LayoutEngine
 import UltrawrailCore
@@ -15,6 +16,17 @@ final class SettingsModel: ObservableObject {
     private var loading = true
 
     var onChange: (() -> Void)?
+
+    /// Live pages overview and the app name/icon of each managed window, fed by the controller.
+    @Published var overview: [ZoneOverview] = []
+    @Published var windowChips: [WindowID: (name: String, icon: NSImage?)] = [:]
+    var moveWindowHandler: ((WindowID, Int, Int) -> Void)?
+    var refreshOverviewHandler: (() -> Void)?
+
+    func moveWindow(_ id: WindowID, toZone zone: Int, page: Int) {
+        moveWindowHandler?(id, zone, page)
+        refreshOverviewHandler?()
+    }
 
     @Published var speed: MotionSpeed { didSet { commit() } }
     @Published var respectReduceMotion: Bool { didSet { commit() } }
