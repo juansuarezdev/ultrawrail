@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let previewView = StripPreviewView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
     let model = SettingsModel()
+    private var settingsWindow: SettingsWindowController?
     private var controller: Controller?
     private var templatePanel: TemplatePanelController?
     private var lastSnapshot: WorkspaceSnapshot?
@@ -20,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onChange = { [weak self] in self?.settingsChanged() }
+        settingsWindow = SettingsWindowController(model: model)
         statusItem.button?.image = NSImage(
             systemSymbolName: "rectangle.split.3x1",
             accessibilityDescription: "Linkr"
@@ -173,6 +175,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(reduce)
         }
 
+        let settingsItem = NSMenuItem(title: "Ajustes…", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
         let legendItem = NSMenuItem(title: "Atajos de teclado", action: nil, keyEquivalent: "")
         let legendMenu = NSMenu()
         let style = model.keyboardStyle
@@ -237,6 +243,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleReduceMotion() {
         model.respectReduceMotion.toggle()
     }
+
+    @objc private func openSettings() { settingsWindow?.show() }
 
     @objc private func toggleLogin() {
         model.launchAtLogin.toggle()
