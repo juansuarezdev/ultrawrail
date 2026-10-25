@@ -110,6 +110,13 @@ Pasos adicionales:
 7. La configuración persiste al reiniciar.
 8. En una zona vacía el teclado sigue en la ventana anterior; abre o mueve una ventana a esa zona.
 
+## Apps excluidas
+
+1. Añadir una app en ejecución (Ajustes > Apps) la saca de la tira y sus ventanas dejan de moverse.
+2. Quitarla de la lista la vuelve a incorporar.
+3. Las ventanas nuevas de una app excluida no entran.
+4. La lista persiste al reiniciar.
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.

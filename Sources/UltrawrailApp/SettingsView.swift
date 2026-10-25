@@ -13,6 +13,8 @@ struct SettingsView: View {
                 .tabItem { Label("Diseño", systemImage: "rectangle.split.3x1") }
             TemplatesTab(model: model)
                 .tabItem { Label("Plantillas", systemImage: "square.split.2x1") }
+            AppsTab(model: model)
+                .tabItem { Label("Apps", systemImage: "app.dashed") }
             ShortcutsTab(model: model)
                 .tabItem { Label("Atajos", systemImage: "keyboard") }
         }

@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller?.config = model.layoutConfig
         controller?.newColumnWidth = model.newColumnWidth
         controller?.zoneCount = model.zoneCount
+        controller?.excludedApps = Set(model.excludedApps)
         rebuildMenu()
     }
 
@@ -132,6 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.placement = model.placement
         controller.newColumnWidth = model.newColumnWidth
         controller.zoneCount = model.zoneCount
+        controller.excludedApps = Set(model.excludedApps)
         controller.onChange = { [weak self] snapshot in self?.workspaceChanged(snapshot) }
         templatePanel = TemplatePanelController(
             controller: controller,

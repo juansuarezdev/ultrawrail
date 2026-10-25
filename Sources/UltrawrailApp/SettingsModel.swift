@@ -11,6 +11,7 @@ final class SettingsModel: ObservableObject {
     private let keyboardStore = KeyboardStyleStore()
     private let layoutStore = LayoutSettingsStore()
     private let templateStore = TemplateStore()
+    private let excludedAppsStore = ExcludedAppsStore()
     private var loading = true
 
     var onChange: (() -> Void)?
@@ -27,6 +28,7 @@ final class SettingsModel: ObservableObject {
     @Published var centerStrip: Bool { didSet { commit() } }
     @Published var zoneCount: Int { didSet { commit() } }
     @Published var customTemplates: [Template] { didSet { commitTemplates() } }
+    @Published var excludedApps: [String] { didSet { commitExcludedApps() } }
     @Published var launchAtLogin: Bool {
         didSet {
             guard !loading, launchAtLogin != oldValue else { return }
@@ -57,6 +59,7 @@ final class SettingsModel: ObservableObject {
         centerStrip = layout.centerStrip
         zoneCount = layout.zoneCount
         customTemplates = templateStore.templates
+        excludedApps = excludedAppsStore.apps
         launchAtLogin = SMAppService.mainApp.status == .enabled
         loading = false
     }
@@ -92,6 +95,22 @@ final class SettingsModel: ObservableObject {
         guard !loading else { return }
         templateStore.templates = customTemplates
         onChange?()
+    }
+
+    /// Only the excluded apps changed: skip the other stores.
+    private func commitExcludedApps() {
+        guard !loading else { return }
+        excludedAppsStore.apps = excludedApps
+        onChange?()
+    }
+
+    func addExcludedApp(_ bundleID: String) {
+        guard !excludedApps.contains(bundleID) else { return }
+        excludedApps = (excludedApps + [bundleID]).sorted()
+    }
+
+    func removeExcludedApp(_ bundleID: String) {
+        excludedApps.removeAll { $0 == bundleID }
     }
 
     var allTemplates: [Template] { TemplateLibrary.all(custom: customTemplates) }
