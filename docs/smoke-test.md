@@ -61,6 +61,16 @@ Pasos adicionales:
 3. En modo Automático, una ventana nueva entra sola. Al pasar de Manual a Automático entran las pendientes.
 4. En el panel de plantillas, con muchas ventanas la lista de la derecha tiene scroll con la rueda o el trackpad.
 
+## Ventana de ajustes
+
+1. El menú tiene "Ajustes…" (Cmd+,). Al abrirlo aparece una ventana con pestañas General, Diseño y Atajos, y Linkr aparece en el Dock y en Cmd+Tab. Al cerrarla desaparece del Dock.
+2. Abrir Ajustes dos veces reutiliza la misma ventana.
+3. En General, cambiar velocidad, ventanas nuevas o teclado se refleja en el menú, y al revés.
+4. En Diseño, mover "Hueco entre ventanas" y "Margen exterior" recoloca las ventanas en vivo. Cambiar el ancho de las columnas nuevas solo afecta a ventanas que se añaden después.
+5. "Restaurar valores" vuelve a 8 px, 8 px y 50 %.
+6. Los ajustes persisten al cerrar y reabrir Linkr.
+7. Con 2 columnas de 50 %, cambiar el foco entre ellas no mueve las ventanas (sin desplazamiento leve).
+
 ## Limitaciones conocidas
 
 - Las ventanas a pantalla completa no emiten notificación AX: no se detecta que entren o salgan de ese modo.
