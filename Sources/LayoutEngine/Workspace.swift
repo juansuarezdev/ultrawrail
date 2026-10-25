@@ -5,6 +5,8 @@ public struct Workspace: Equatable, Sendable {
     public private(set) var focusedColumn = 0
     public private(set) var focusedRow = 0
     public var scrollOffset: Double = 0
+    /// Width given to columns created from now on (new windows, unstacked windows, leftovers).
+    public var newColumnWidth: Double = WidthPreset.defaultWidth
 
     public init() {}
 
@@ -20,7 +22,7 @@ public struct Workspace: Equatable, Sendable {
     public mutating func addWindow(_ id: WindowID) {
         guard !contains(id) else { return }
         let index = columns.isEmpty ? 0 : focusedColumn + 1
-        columns.insert(Column(windows: [id]), at: index)
+        columns.insert(Column(windows: [id], width: newColumnWidth), at: index)
         focusedColumn = index
         focusedRow = 0
     }
@@ -72,7 +74,7 @@ public struct Workspace: Equatable, Sendable {
             }
             if !windows.isEmpty { rebuilt.append(Column(windows: windows, width: spec.width)) }
         }
-        for id in existing where !used.contains(id) { rebuilt.append(Column(windows: [id])) }
+        for id in existing where !used.contains(id) { rebuilt.append(Column(windows: [id], width: newColumnWidth)) }
         columns = rebuilt
         scrollOffset = 0
         focusedColumn = 0
@@ -139,7 +141,7 @@ public struct Workspace: Equatable, Sendable {
     private mutating func unstack() {
         guard columns[focusedColumn].windows.count > 1, let id = focusedWindow else { return }
         columns[focusedColumn].windows.remove(at: focusedRow)
-        columns.insert(Column(windows: [id]), at: focusedColumn + 1)
+        columns.insert(Column(windows: [id], width: newColumnWidth), at: focusedColumn + 1)
         focusedColumn += 1
         focusedRow = 0
     }

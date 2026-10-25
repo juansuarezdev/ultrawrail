@@ -28,7 +28,13 @@ public final class Controller {
 
     private let windows: WindowService
     private let hotkeys: HotkeyService
-    private let config: LayoutConfig
+    public var config: LayoutConfig {
+        didSet { if config != oldValue { relayout(force: true) } }
+    }
+    public var newColumnWidth: Double {
+        get { workspace.newColumnWidth }
+        set { workspace.newColumnWidth = newValue }
+    }
     private let animator: Animator?
     private let reduceMotion: () -> Bool
     private var needsClamp = false

@@ -198,4 +198,28 @@ final class WorkspaceTests: XCTestCase {
         ws.apply(.focusDown)
         XCTAssertEqual(ws.focusedWindow, 2)
     }
+
+    func testNewColumnWidthAppliesToAddedWindows() {
+        var ws = Workspace()
+        ws.newColumnWidth = 0.33
+        ws.addWindow(1)
+        XCTAssertEqual(ws.columns[0].width, 0.33)
+    }
+
+    func testChangingNewColumnWidthLeavesExistingColumnsAlone() {
+        var ws = makeWorkspace(2)
+        ws.newColumnWidth = 0.75
+        XCTAssertEqual(ws.columns.map(\.width), [0.5, 0.5])
+        ws.addWindow(3)
+        XCTAssertEqual(ws.columns.map(\.width), [0.5, 0.5, 0.75])
+    }
+
+    func testUnstackedWindowGetsNewColumnWidth() {
+        var ws = makeWorkspace(2)
+        ws.apply(.stackLeft)            // [[1, 2]]
+        ws.newColumnWidth = 0.25
+        ws.apply(.unstack)
+        XCTAssertEqual(ws.columns.map(\.windows), [[1], [2]])
+        XCTAssertEqual(ws.columns[1].width, 0.25)
+    }
 }
