@@ -26,6 +26,23 @@ final class TemplateLibraryTests: XCTestCase {
         XCTAssertEqual(decoded[0].columns.reduce(0) { $0 + $1.width }, 1, accuracy: 1e-9)
     }
 
+    func testOneBadElementKeepsTheGoodOnes() throws {
+        let good = String(data: try JSONEncoder().encode(custom), encoding: .utf8)!
+        let json = "[\(good), {\"id\": 5, \"junk\": true}, \"x\", \(good.replacingOccurrences(of: "custom-1", with: "custom-2"))]"
+        let decoded = TemplateCodec.decode(Data(json.utf8))
+        XCTAssertEqual(decoded.map(\.id), ["custom-1", "custom-2"])
+    }
+
+    func testDecodeIfPossibleIsNilForGarbage() {
+        XCTAssertNil(TemplateCodec.decodeIfPossible(Data("nope".utf8)))
+        XCTAssertEqual(TemplateCodec.decodeIfPossible(Data("[]".utf8)), [])
+    }
+
+    func testDecodeDropsBuiltInIds() throws {
+        let clash = Template(id: "halves", name: "Falsa", columns: [TemplateColumn(width: 1, slots: 1)])
+        XCTAssertEqual(TemplateCodec.decode(try JSONEncoder().encode([clash, custom])).map(\.id), ["custom-1"])
+    }
+
     func testDecodeDropsDuplicateIds() throws {
         let data = try JSONEncoder().encode([custom, custom])
         XCTAssertEqual(TemplateCodec.decode(data).count, 1)

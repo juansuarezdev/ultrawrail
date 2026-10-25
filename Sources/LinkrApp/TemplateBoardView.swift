@@ -129,7 +129,8 @@ final class TemplateBoardView: NSView {
         if point.y < 100 {
             let maxScroll = max(0, CGFloat(templates.count) * 162 + 16 - bounds.width)
             guard maxScroll > 0 else { return super.scrollWheel(with: event) }
-            let delta = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) ? event.scrollingDeltaX : event.scrollingDeltaY
+            let raw = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) ? event.scrollingDeltaX : event.scrollingDeltaY
+            let delta = raw * (event.hasPreciseScrollingDeltas ? 1 : 8)
             cardScroll = min(maxScroll, max(0, cardScroll - delta))
             return
         }

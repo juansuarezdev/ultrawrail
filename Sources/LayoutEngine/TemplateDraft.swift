@@ -5,7 +5,7 @@ public struct TemplateDraft: Equatable, Sendable {
     public static let maxColumns = 5
     public static let maxSlots = 3
     public static let snaps: [Double] = [0.25, 0.33, 0.5, 0.66, 0.75]
-    public static let snapTolerance = 0.035
+    public static let snapTolerance = 0.025
 
     public private(set) var columns: [TemplateColumn]
 

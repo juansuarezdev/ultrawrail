@@ -8,6 +8,11 @@ struct TemplateStore {
 
     var templates: [Template] {
         get { defaults.data(forKey: key).map(TemplateCodec.decode) ?? [] }
-        nonmutating set { defaults.set(TemplateCodec.encode(newValue), forKey: key) }
+        nonmutating set {
+            // Never overwrite stored data we could not read, and never write nil (that deletes the key).
+            if let stored = defaults.data(forKey: key), TemplateCodec.decodeIfPossible(stored) == nil { return }
+            guard let data = TemplateCodec.encode(newValue) else { return }
+            defaults.set(data, forKey: key)
+        }
     }
 }

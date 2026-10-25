@@ -71,7 +71,7 @@ final class TemplateDraftTests: XCTestCase {
         var d = draft([0.5, 0.5])
         d.moveDivider(0, to: 0.27)
         XCTAssertEqual(d.columns.map(\.width), [0.25, 0.75])
-        d.moveDivider(0, to: 0.47)
+        d.moveDivider(0, to: 0.48)
         XCTAssertEqual(d.columns.map(\.width), [0.5, 0.5])
     }
 

@@ -22,7 +22,7 @@ final class SettingsModel: ObservableObject {
     @Published var gap: Double { didSet { commit() } }
     @Published var outerGap: Double { didSet { commit() } }
     @Published var newColumnWidth: Double { didSet { commit() } }
-    @Published var customTemplates: [Template] { didSet { commit() } }
+    @Published var customTemplates: [Template] { didSet { commitTemplates() } }
     @Published var launchAtLogin: Bool {
         didSet {
             guard !loading, launchAtLogin != oldValue else { return }
@@ -69,6 +69,12 @@ final class SettingsModel: ObservableObject {
         placementStore.mode = placement
         keyboardStore.style = keyboardStyle
         layoutStore.settings = LayoutSettings(gap: gap, outerGap: outerGap, newColumnWidth: newColumnWidth)
+        onChange?()
+    }
+
+    /// Only the templates changed: skip the other stores.
+    private func commitTemplates() {
+        guard !loading else { return }
         templateStore.templates = customTemplates
         onChange?()
     }

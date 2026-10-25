@@ -45,11 +45,13 @@ struct TemplatesTab: View {
     @State private var aspect: Aspect = Aspect.nearest(to: Self.screenRatio())
     @State private var activeDivider: Int?
     @State private var snapped: Double?
+    @State private var dragColumns: (id: String, columns: [TemplateColumn])?
+    @State private var cursorPushed = false
 
     private static let canvasWidth: CGFloat = 460
 
     private static func screenRatio() -> Double {
-        guard let frame = NSScreen.main?.frame, frame.height > 0 else { return 16.0 / 9.0 }
+        guard let frame = NSScreen.screens.first?.frame, frame.height > 0 else { return 16.0 / 9.0 }
         return Double(frame.width / frame.height)
     }
 
@@ -117,7 +119,9 @@ struct TemplatesTab: View {
         model.update(Template(id: template.id, name: template.name, columns: draft.columns))
     }
 
-    private func editor(for t: Template) -> some View {
+    private func editor(for stored: Template) -> some View {
+        var t = stored
+        if let drag = dragColumns, drag.id == stored.id { t = Template(id: stored.id, name: stored.name, columns: drag.columns) }
         let readOnly = isReadOnly(t)
         return VStack(alignment: .leading, spacing: 12) {
             header(t, readOnly: readOnly)
@@ -150,10 +154,11 @@ struct TemplatesTab: View {
 
     private func header(_ t: Template, readOnly: Bool) -> some View {
         HStack {
-            TextField("Nombre", text: Binding(
-                get: { t.name },
-                set: { model.update(Template(id: t.id, name: $0, columns: t.columns)) }
-            ))
+            NameField(name: t.name) { newName in
+                let name = newName.trimmingCharacters(in: .whitespaces).isEmpty ? "Sin nombre" : newName
+                if name != t.name { model.update(Template(id: t.id, name: name, columns: t.columns)) }
+            }
+            .id(t.id)
             .disabled(readOnly)
             .frame(maxWidth: 200)
             if readOnly {
@@ -247,13 +252,24 @@ struct TemplatesTab: View {
             .frame(width: 4, height: 46)
             .frame(width: 18, height: 46)
             .contentShape(Rectangle())
-            .position(x: width * boundary, y: width / CGFloat(aspect.ratio) / 2)
             .onHover { inside in
                 guard !readOnly else { return }
-                if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+                if inside && !cursorPushed {
+                    NSCursor.resizeLeftRight.push()
+                    cursorPushed = true
+                } else if !inside && cursorPushed {
+                    NSCursor.pop()
+                    cursorPushed = false
+                }
+            }
+            .onDisappear {
+                if cursorPushed {
+                    NSCursor.pop()
+                    cursorPushed = false
+                }
             }
             .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named("screen"))
+                DragGesture(minimumDistance: 3, coordinateSpace: .named("screen"))
                     .onChanged { value in
                         guard !readOnly else { return }
                         activeDivider = index
@@ -261,13 +277,18 @@ struct TemplatesTab: View {
                         draft.moveDivider(index, to: Double(value.location.x / width))
                         let moved = [draft.columns[index].width, draft.columns[index + 1].width]
                         snapped = moved.first { w in TemplateDraft.snaps.contains(w) }
-                        model.update(Template(id: t.id, name: t.name, columns: draft.columns))
+                        dragColumns = (t.id, draft.columns)
                     }
                     .onEnded { _ in
+                        if let drag = dragColumns, drag.id == t.id {
+                            model.update(Template(id: t.id, name: t.name, columns: drag.columns))
+                        }
+                        dragColumns = nil
                         activeDivider = nil
                         snapped = nil
                     }
             )
+            .position(x: width * boundary, y: width / CGFloat(aspect.ratio) / 2)
     }
 
     private func ruler(_ t: Template) -> some View {
@@ -287,5 +308,27 @@ struct TemplatesTab: View {
         }
         .frame(width: width, height: 24)
         .accessibilityHidden(true)
+    }
+}
+
+/// Name editor with a local draft: commits on return, focus loss or disappearance, not per keystroke.
+private struct NameField: View {
+    let name: String
+    let commit: (String) -> Void
+    @State private var text: String
+    @FocusState private var focused: Bool
+
+    init(name: String, commit: @escaping (String) -> Void) {
+        self.name = name
+        self.commit = commit
+        _text = State(initialValue: name)
+    }
+
+    var body: some View {
+        TextField("Nombre", text: $text)
+            .focused($focused)
+            .onSubmit { commit(text) }
+            .onChange(of: focused) { isFocused in if !isFocused { commit(text) } }
+            .onDisappear { commit(text) }
     }
 }
