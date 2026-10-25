@@ -134,3 +134,9 @@ Pasos adicionales:
 - Las ventanas aparcadas pueden verse en una segunda pantalla situada a la derecha de la principal.
 - Si Ultrawrail se cierra de forma inesperada estando en la página 2, las ventanas de las demás páginas siguen aparcadas hasta volver a abrirlo.
 - Al pasar el foco a una zona vacía, el teclado sigue en la ventana de la zona anterior y hacer clic en ella no avisa del cambio; abre o mueve una ventana a esa zona.
+
+## Selector de página en el panel
+
+1. Con varias páginas, Ctrl+Alt+T muestra arriba ◀ "Zona Z · Página N de M" ▶; las flechas cambian de página sin cerrar el panel.
+2. El tablero muestra las ventanas de la página elegida y conserva la plantilla seleccionada.
+3. Aplicar solo reorganiza esa página.
