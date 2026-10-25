@@ -1,4 +1,4 @@
-public struct TemplateColumn: Equatable, Sendable {
+public struct TemplateColumn: Equatable, Sendable, Codable {
     public let width: Double
     public let slots: Int
     public init(width: Double, slots: Int) {
@@ -7,7 +7,7 @@ public struct TemplateColumn: Equatable, Sendable {
     }
 }
 
-public struct Template: Equatable, Sendable {
+public struct Template: Equatable, Sendable, Codable {
     public let id: String
     public let name: String
     public let columns: [TemplateColumn]
@@ -43,4 +43,16 @@ public struct Template: Equatable, Sendable {
         Template(id: "half-stack", name: "Mitad + dos apiladas",
                  columns: [TemplateColumn(width: 0.5, slots: 1), TemplateColumn(width: 0.5, slots: 2)]),
     ]
+
+    public static let ultrawide: [Template] = [
+        Template(id: "center", name: "Centro 25 · 50 · 25",
+                 columns: [TemplateColumn(width: 0.25, slots: 1), TemplateColumn(width: 0.5, slots: 1), TemplateColumn(width: 0.25, slots: 1)]),
+        Template(id: "quad", name: "Cuatro columnas",
+                 columns: (0..<4).map { _ in TemplateColumn(width: 0.25, slots: 1) }),
+        Template(id: "dual-zones", name: "Dos zonas 16:9",
+                 columns: [TemplateColumn(width: 0.5, slots: 2), TemplateColumn(width: 0.5, slots: 2)]),
+    ]
+
+    /// Every template that ships with Linkr, in display order.
+    public static let builtIn: [Template] = all + ultrawide
 }
