@@ -12,7 +12,7 @@ public struct TemplateDraft: Equatable, Sendable {
     public init(columns: [TemplateColumn]) {
         let kept = columns.isEmpty ? [TemplateColumn(width: 1, slots: 1)] : Array(columns.prefix(Self.maxColumns))
         self.columns = Self.normalized(kept.map {
-            TemplateColumn(width: max($0.width, 0.01), slots: min(max($0.slots, 1), Self.maxSlots))
+            TemplateColumn(width: max($0.width, Self.minWidth), slots: min(max($0.slots, 1), Self.maxSlots))
         })
     }
 
@@ -27,11 +27,12 @@ public struct TemplateDraft: Equatable, Sendable {
         return result
     }
 
-    /// Splits the widest column in two equal halves.
+    /// Splits the widest column in two equal halves; no-op if that would leave a half below `minWidth`.
     public mutating func addColumn() {
         guard columns.count < Self.maxColumns else { return }
         var widest = 0
         for (index, column) in columns.enumerated() where column.width > columns[widest].width { widest = index }
+        guard columns[widest].width >= 2 * Self.minWidth else { return }
         let half = Self.round3(columns[widest].width / 2)
         let rest = Self.round3(columns[widest].width - half)
         columns[widest] = TemplateColumn(width: half, slots: columns[widest].slots)

@@ -41,6 +41,12 @@ final class TemplateDraftTests: XCTestCase {
         XCTAssertEqual(d.columns.count, 5)
     }
 
+    func testAddColumnIsNoOpWhenWidestIsTooNarrowToSplit() {
+        var d = draft([0.25, 0.25, 0.25, 0.25])
+        d.addColumn()
+        XCTAssertEqual(d.columns.map(\.width), [0.25, 0.25, 0.25, 0.25])
+    }
+
     func testRemoveColumnMergesIntoNeighbour() {
         var d = draft([0.25, 0.5, 0.25])
         d.removeColumn(at: 1)
@@ -67,6 +73,12 @@ final class TemplateDraftTests: XCTestCase {
         XCTAssertEqual(d.columns.map(\.width), [0.25, 0.75])
         d.moveDivider(0, to: 0.47)
         XCTAssertEqual(d.columns.map(\.width), [0.5, 0.5])
+    }
+
+    func testMoveDividerOutsideToleranceDoesNotSnap() {
+        var d = draft([0.5, 0.5])
+        d.moveDivider(0, to: 0.40)
+        XCTAssertEqual(d.columns.map(\.width), [0.4, 0.6])
     }
 
     func testMoveDividerSnapsTheNeighbourSideToo() {
