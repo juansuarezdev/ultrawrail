@@ -108,6 +108,7 @@ Pasos adicionales:
 5. Bajar de 3 a 1 zona junta todas las ventanas en la zona restante.
 6. Ctrl+Alt+Win+flechas pueden chocar con atajos de otras apps y macOS no avisa.
 7. La configuración persiste al reiniciar.
+8. En una zona vacía el teclado sigue en la ventana anterior; abre o mueve una ventana a esa zona.
 
 ## Limitaciones conocidas
 
@@ -117,3 +118,4 @@ Pasos adicionales:
 - No se comprueban los valores de retorno del registro de notificaciones AX.
 - Las ventanas aparcadas pueden verse en una segunda pantalla situada a la derecha de la principal.
 - Si Ultrawrail se cierra de forma inesperada estando en la página 2, las ventanas de las demás páginas siguen aparcadas hasta volver a abrirlo.
+- Al pasar el foco a una zona vacía, el teclado sigue en la ventana de la zona anterior y hacer clic en ella no avisa del cambio; abre o mueve una ventana a esa zona.
