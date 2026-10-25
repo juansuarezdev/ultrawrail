@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/juansuarezdev/ultrawrail/actions/workflows/ci.yml"><img src="https://github.com/juansuarezdev/ultrawrail/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/macOS-13%2B-black" alt="macOS 13+">
-  <img src="https://img.shields.io/badge/Swift-5.9%2B-orange" alt="Swift">
+  <img src="https://img.shields.io/badge/Swift-6.0%2B-orange" alt="Swift">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
@@ -61,7 +61,7 @@ Written for a Windows keyboard on a Mac (`Win` = `⌘`, `Alt` = `⌥`, `Ctrl` = 
 
 There are no prebuilt binaries yet: the app is not notarized. Build it yourself.
 
-Requirements: macOS 13+, Xcode command line tools (Swift 5.9+).
+Requirements: macOS 13+, Xcode command line tools (Swift 6.0+).
 
 ```sh
 git clone https://github.com/juansuarezdev/ultrawrail.git
