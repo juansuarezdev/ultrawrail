@@ -224,4 +224,31 @@ final class ControllerCanvasTests: XCTestCase {
         XCTAssertTrue(pages[1].isCurrent)
         XCTAssertEqual(windows.focusCalls.last, WindowID(2))
     }
+
+    func testUnassignedWindowCanBeAssignedAndStacked() {
+        let windows = FakeWindows()
+        windows.add(1)
+        windows.add(2)
+        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: LayoutConfig(gap: 10, outerGap: 10))
+        controller.placement = .manual
+        controller.start()
+        windows.add(3)
+        windows.onEvent?(.opened(WindowInfo(id: WindowID(3), isManageable: true)))
+        XCTAssertEqual(controller.unassignedWindows(), [WindowID(3)])
+        controller.assign(WindowID(3), toZone: 0, page: 1)
+        XCTAssertTrue(controller.unassignedWindows().isEmpty)
+        XCTAssertEqual(controller.overview()[0].pages.map(\.windows), [[WindowID(1), WindowID(2)], [WindowID(3)]])
+    }
+
+    func testStackingAnUnassignedWindowJoinsTheTargetColumn() {
+        let windows = FakeWindows()
+        windows.add(1)
+        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: LayoutConfig(gap: 10, outerGap: 10))
+        controller.placement = .manual
+        controller.start()
+        windows.add(2)
+        windows.onEvent?(.opened(WindowInfo(id: WindowID(2), isManageable: true)))
+        controller.stack(WindowID(2), onto: WindowID(1))
+        XCTAssertEqual(controller.overview()[0].pages[0].columns.map(\.windows), [[WindowID(1), WindowID(2)]])
+    }
 }

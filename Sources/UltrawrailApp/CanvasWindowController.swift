@@ -22,6 +22,14 @@ final class CanvasWindowController {
             self?.close()
             self?.controller.reveal(id)
         }
+        model.onAssignToCurrent = { [weak self] id in
+            guard let self else { return }
+            let overview = self.controller.overview()
+            if let zone = overview.firstIndex(where: \.isFocused),
+               let page = overview[zone].pages.firstIndex(where: \.isCurrent) {
+                self.apply(.page(zone: zone, page: page), to: id)
+            }
+        }
         model.onDrop = { [weak self] id, drop in self?.apply(drop, to: id) }
     }
 
@@ -30,7 +38,7 @@ final class CanvasWindowController {
     }
 
     private func open() {
-        guard !controller.managedWindows.isEmpty, let screen = NSScreen.main else { return }
+        guard !controller.managedWindows.isEmpty || !controller.unassignedWindows().isEmpty, let screen = NSScreen.main else { return }
         model.screenSize = screen.frame.size
         reload()
         model.fit()
@@ -66,7 +74,9 @@ final class CanvasWindowController {
     private func reload() {
         let overview = controller.overview()
         var chips: [WindowID: (name: String, icon: NSImage?)] = [:]
-        for id in controller.managedWindows {
+        let unassigned = controller.unassignedWindows()
+        model.unassigned = unassigned
+        for id in controller.managedWindows + unassigned {
             let description = controller.describe(id)
             let icon = description.flatMap { NSRunningApplication(processIdentifier: pid_t($0.pid))?.icon }
             chips[id] = (description?.appName ?? "Ventana", icon)
@@ -78,7 +88,7 @@ final class CanvasWindowController {
     /// One window per main-actor turn so thumbnails pop in without freezing the canvas.
     private func captureThumbnails() {
         guard model.hasCapturePermission else { return }
-        let ids = controller.managedWindows
+        let ids = controller.managedWindows + controller.unassignedWindows()
         Task { @MainActor [weak self] in
             for id in ids {
                 await Task.yield()
@@ -94,7 +104,12 @@ final class CanvasWindowController {
     private func apply(_ drop: CanvasDrop, to id: WindowID) {
         switch drop {
         case .stack(let target): controller.stack(id, onto: target)
-        case .page(let zone, let page): controller.moveWindow(id, toZone: zone, page: page)
+        case .page(let zone, let page):
+            if controller.unassignedWindows().contains(id) {
+                controller.assign(id, toZone: zone, page: page)
+            } else {
+                controller.moveWindow(id, toZone: zone, page: page)
+            }
         }
         reload()
     }

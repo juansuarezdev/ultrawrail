@@ -157,3 +157,10 @@ Pasos adicionales:
 3. Barra inferior izquierda: − / porcentaje / + y "ver todo". La rueda o dos dedos desplazan; Cmd o Ctrl con la rueda, o pellizcar, hacen zoom; arrastrar el fondo desplaza.
 4. Arrastrar una ventana a otra página la mueve; a la tarjeta "＋ Nueva página" crea una; soltarla sobre otra ventana las apila (etiqueta "· 2 ventanas").
 5. Clic en una ventana cierra el lienzo y salta a su zona y página con foco.
+
+## Lienzo: ventanas sin asignar
+
+1. Con la colocación en Manual, abre una ventana nueva y pulsa Ctrl+Alt+O: aparece en la bandeja "Sin asignar" flotando arriba.
+2. Arrástrala a una página, a "＋ Nueva página" o sobre otra ventana (se apila): entra en la tira sin cambiar de página.
+3. Clic en una ventana de la bandeja la añade a la página actual.
+4. Las ventanas de apps excluidas también salen en la bandeja y se pueden añadir a mano.

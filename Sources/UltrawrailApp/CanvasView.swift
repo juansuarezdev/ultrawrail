@@ -23,12 +23,20 @@ struct CanvasView: View {
                     }
                     .onEnded { _ in lastPan = .zero })
             world
-            VStack {
+            VStack(spacing: 12) {
                 if !model.hasCapturePermission { permissionBanner }
+                if !model.unassigned.isEmpty { UnassignedTray(model: model) }
                 Spacer()
                 HStack { controls; Spacer() }
             }
             .padding(20)
+        }
+        .overlay(alignment: .topLeading) {
+            if let drag = model.trayDrag {
+                TrayThumb(model: model, id: drag.id, dragging: true)
+                    .position(drag.location)
+                    .allowsHitTesting(false)
+            }
         }
         .coordinateSpace(name: "canvas")
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -171,5 +179,68 @@ private struct WindowThumbView: View {
         .fixedSize()
         .scaleEffect(1 / model.scale, anchor: .bottomLeading)
         .offset(y: -(24 + 6 / model.scale))
+    }
+}
+
+/// Windows that are on no page, floating above the canvas so they can be dropped onto one.
+private struct UnassignedTray: View {
+    @ObservedObject var model: CanvasModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Sin asignar · \(model.unassigned.count)")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(model.unassigned, id: \.rawValue) { id in
+                        TrayThumb(model: model, id: id, dragging: false)
+                            .opacity(model.trayDrag?.id == id ? 0.3 : 1)
+                            .onTapGesture { model.onAssignToCurrent?(id) }
+                            .gesture(DragGesture(minimumDistance: 6, coordinateSpace: .named("canvas"))
+                                .onChanged { model.updateTrayDrag(id, location: $0.location) }
+                                .onEnded { _ in model.endTrayDrag(id) })
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 16).fill(.black.opacity(0.55)))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.14)))
+        .frame(maxWidth: 900)
+        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+    }
+}
+
+private struct TrayThumb: View {
+    @ObservedObject var model: CanvasModel
+    let id: WindowID
+    let dragging: Bool
+
+    private var chip: (name: String, icon: NSImage?)? { model.chips[id] }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ZStack {
+                if let image = model.thumbnails[id] {
+                    Image(nsImage: image).resizable().scaledToFill()
+                } else {
+                    Color(white: 0.16)
+                    if let icon = chip?.icon { Image(nsImage: icon).resizable().scaledToFit().frame(width: 44, height: 44).opacity(0.85) }
+                }
+            }
+            .frame(width: 168, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(dragging ? 0.6 : 0.15), lineWidth: 1.5))
+            HStack(spacing: 5) {
+                if let icon = chip?.icon { Image(nsImage: icon).resizable().frame(width: 14, height: 14) }
+                Text(chip?.name ?? "Ventana").lineLimit(1)
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.white.opacity(0.9))
+        }
+        .frame(width: 168)
+        .shadow(color: .black.opacity(dragging ? 0.6 : 0), radius: 24, y: 8)
     }
 }

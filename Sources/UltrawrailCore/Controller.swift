@@ -688,9 +688,41 @@ public final class Controller {
         focusWindow(id)
     }
 
+    /// Windows that exist and could be managed but are on no page (pending, or left out).
+    public func unassignedWindows() -> [WindowID] {
+        let managed = Set(allPageWindows)
+        return windows.allWindows().filter { $0.isManageable && !managed.contains($0.id) && windows.isAlive($0.id) }.map(\.id)
+    }
+
+    /// Adds an unassigned window to a zone and page without switching to it. A page index equal to
+    /// the page count appends a new page. Works for windows of excluded apps too: it is explicit.
+    public func assign(_ id: WindowID, toZone zone: Int, page: Int) {
+        guard zones.indices.contains(zone), page >= 0, unassignedWindows().contains(id) else { return }
+        let count = zones[zone].pages.count
+        guard page < count || (page == count && count < Self.maxPages) else { return }
+        if page == count {
+            var fresh = Workspace()
+            fresh.newColumnWidth = newColumnWidth
+            zones[zone].pages.append(fresh)
+        }
+        pending[id] = nil
+        if pendingFocus == id { pendingFocus = nil }
+        zones[zone].pages[page].addWindow(id)
+        needsClamp = true
+        relayout(force: true)
+    }
+
     /// Puts `id` in the column of `target`, first moving it to the target's page when needed.
     public func stack(_ id: WindowID, onto target: WindowID) {
-        guard id != target, let place = locate(target), let source = locate(id) else { return }
+        guard id != target, let place = locate(target) else { return }
+        guard let source = locate(id) else {
+            assign(id, toZone: place.zone, page: place.page)
+            if let now = locate(target), locate(id) != nil {
+                zones[now.zone].pages[now.page].stack(id, onto: target)
+                relayout(force: true)
+            }
+            return
+        }
         if source.zone != place.zone || source.page != place.page {
             moveWindow(id, toZone: place.zone, page: place.page)
         }

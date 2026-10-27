@@ -44,9 +44,13 @@ final class CanvasModel: ObservableObject {
     @Published var dropTarget: CanvasDrop?
     @Published var hasCapturePermission = true
     @Published var focusedWindow: WindowID?
+    @Published var unassigned: [WindowID] = []
+    /// A tray window being dragged: its id and the cursor in screen space.
+    @Published var trayDrag: (id: WindowID, location: CGPoint)?
 
     var screenSize: CGSize = CGSize(width: 1440, height: 900)
     var onReveal: ((WindowID) -> Void)?
+    var onAssignToCurrent: ((WindowID) -> Void)?
     var onDrop: ((WindowID, CanvasDrop) -> Void)?
 
     static let minScale: CGFloat = 0.08
@@ -149,6 +153,18 @@ final class CanvasModel: ObservableObject {
         guard let rect = rect(of: id) else { return }
         let point = CGPoint(x: rect.midX + dragDelta.width, y: rect.midY + dragDelta.height)
         dropTarget = target(at: point, excluding: id)
+    }
+
+    func updateTrayDrag(_ id: WindowID, location: CGPoint) {
+        trayDrag = (id, location)
+        dropTarget = target(at: worldPoint(fromScreen: location), excluding: id)
+    }
+
+    func endTrayDrag(_ id: WindowID) {
+        let target = dropTarget
+        trayDrag = nil
+        dropTarget = nil
+        if let target { onDrop?(id, target) }
     }
 
     func endDrag(_ id: WindowID) {
