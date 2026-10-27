@@ -34,11 +34,9 @@ final class ControllerOverviewTests: XCTestCase {
     func testOverviewShape() {
         let (c, _) = populated()
         let overview = c.overview()
-        XCTAssertEqual(overview, [
-            ZoneOverview(pages: [PageOverview(windows: ids(1, 2), isCurrent: false),
-                                 PageOverview(windows: ids(3), isCurrent: true)], isFocused: true),
-            ZoneOverview(pages: [PageOverview(windows: ids(4), isCurrent: true)], isFocused: false),
-        ])
+        XCTAssertEqual(overview.map(\.isFocused), [true, false])
+        XCTAssertEqual(overview.map { $0.pages.map(\.windows) }, [[ids(1, 2), ids(3)], [ids(4)]])
+        XCTAssertEqual(overview.map { $0.pages.map(\.isCurrent) }, [[false, true], [true]])
     }
 
     func testMoveBetweenPages() {
