@@ -59,7 +59,7 @@ final class AnimatorTests: XCTestCase {
         var emitted: [(frames: [WindowID: CGRect], finished: Bool)] = []
         animator.onFrame = { frames, finished in
             emitted.append((frames, finished))
-            clock.time += 0.06
+            clock.time += 0.25
         }
         animator.start(Tween(from: [1: start], to: [1: end], duration: 0.2))
         clock.fire(advancingBy: 0.01)
@@ -117,7 +117,7 @@ final class AnimatorTests: XCTestCase {
             calls += 1
             emitted.append(frames)
             if calls == 1 {
-                clock.time += 0.06
+                clock.time += 0.25
             } else if calls == 2 {
                 animator.cancel()
                 animator.start(Tween(from: [2: self.start], to: [2: self.end], duration: 0.2))
@@ -141,7 +141,7 @@ final class AnimatorTests: XCTestCase {
             emitted.append(frames)
             if emitted.count == 1 {
                 animator.remove(2)
-                clock.time += 0.06
+                clock.time += 0.25
             }
         }
         animator.start(Tween(from: [1: start, 2: start], to: [1: end, 2: end], duration: 0.2))

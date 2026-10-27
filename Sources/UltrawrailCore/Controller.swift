@@ -688,6 +688,14 @@ public final class Controller {
         focusWindow(id)
     }
 
+    /// Resizes the column holding `id` to `fraction` of its zone's width, on any page.
+    public func setColumnWidth(of id: WindowID, to fraction: Double) {
+        guard let place = locate(id) else { return }
+        zones[place.zone].pages[place.page].setWidth(ofColumnContaining: id, to: fraction)
+        needsClamp = true
+        relayout()
+    }
+
     /// Windows that exist and could be managed but are on no page (pending, left out, or minimized).
     public func unassignedWindows() -> [WindowID] {
         let managed = Set(allPageWindows)

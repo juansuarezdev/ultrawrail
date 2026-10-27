@@ -8,6 +8,8 @@ struct CanvasWindow: Identifiable {
     let id: WindowID
     let rect: CGRect
     let columnSize: Int
+    /// Width of the zone the window lives in, to turn a dragged width into a fraction.
+    let viewportWidth: CGFloat
 }
 
 struct CanvasPage: Identifiable {
@@ -42,6 +44,8 @@ final class CanvasModel: ObservableObject {
     @Published var dragging: WindowID?
     @Published var dragDelta: CGSize = .zero
     @Published var dropTarget: CanvasDrop?
+    /// A column being resized with its edge handle: a window of it and the width change in world units.
+    @Published var resizing: (id: WindowID, delta: CGFloat)?
     @Published var hasCapturePermission = true
     @Published var focusedWindow: WindowID?
     @Published var unassigned: [WindowID] = []
@@ -50,6 +54,7 @@ final class CanvasModel: ObservableObject {
 
     var screenSize: CGSize = CGSize(width: 1440, height: 900)
     var onReveal: ((WindowID) -> Void)?
+    var onResize: ((WindowID, Double) -> Void)?
     var onAssignToCurrent: ((WindowID) -> Void)?
     var onDrop: ((WindowID, CanvasDrop) -> Void)?
 
@@ -72,7 +77,7 @@ final class CanvasModel: ObservableObject {
                 result.append(CanvasPage(zone: zone, page: page, rect: card, isCurrent: content.isCurrent,
                                          windows: strip.windows.map { window in
                     CanvasWindow(id: window.id, rect: window.rect.offsetBy(dx: card.minX, dy: card.minY + Self.headerHeight),
-                                 columnSize: window.columnSize)
+                                 columnSize: window.columnSize, viewportWidth: window.viewportWidth)
                 }, isNewSlot: false))
                 x += width + Self.pageGap
             }
@@ -95,7 +100,7 @@ final class CanvasModel: ObservableObject {
             let height = (viewport.height - columnGap * (count - 1)) / count
             for (row, id) in column.windows.enumerated() {
                 windows.append(CanvasWindow(id: id, rect: CGRect(x: x, y: CGFloat(row) * (height + columnGap), width: width, height: height),
-                                            columnSize: column.windows.count))
+                                            columnSize: column.windows.count, viewportWidth: viewport.width))
             }
             x += width + columnGap
         }
@@ -129,6 +134,14 @@ final class CanvasModel: ObservableObject {
 
     func worldPoint(fromScreen point: CGPoint) -> CGPoint {
         CGPoint(x: (point.x - offset.width) / scale, y: (point.y - offset.height) / scale)
+    }
+
+    func sameColumn(_ a: WindowID, _ b: WindowID) -> Bool {
+        if a == b { return true }
+        guard let page = pages.first(where: { $0.windows.contains { $0.id == a } }),
+              let first = page.windows.first(where: { $0.id == a }),
+              let second = page.windows.first(where: { $0.id == b }) else { return false }
+        return first.rect.minX == second.rect.minX
     }
 
     func rect(of id: WindowID) -> CGRect? {
@@ -165,6 +178,17 @@ final class CanvasModel: ObservableObject {
         trayDrag = nil
         dropTarget = nil
         if let target { onDrop?(id, target) }
+    }
+
+    func updateResize(_ id: WindowID, translation: CGFloat) {
+        resizing = (id, translation / scale)
+    }
+
+    func endResize(_ window: CanvasWindow) {
+        guard let resizing, resizing.id == window.id else { return }
+        self.resizing = nil
+        let width = window.rect.width + resizing.delta
+        onResize?(window.id, Double(width / window.viewportWidth))
     }
 
     func endDrag(_ id: WindowID) {

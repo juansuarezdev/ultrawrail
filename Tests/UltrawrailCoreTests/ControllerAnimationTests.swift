@@ -97,7 +97,7 @@ final class ControllerAnimationTests: XCTestCase {
     func testSlowFrameSnapsToTarget() {
         let (controller, windows) = makeController([1, 2, 3])
         controller.handle(.centerColumn)
-        windows.onSetFrame = { [clock] in clock.time += 0.05 }
+        windows.onSetFrame = { [clock] in clock.time += 0.25 }
         clock.fire(advancingBy: 0.01)
         XCTAssertEqual(windows.lastRect(2), CGRect(x: -237.5, y: 10, width: 485, height: 780))
         XCTAssertEqual(windows.lastRect(3), CGRect(x: 257.5, y: 10, width: 485, height: 780))

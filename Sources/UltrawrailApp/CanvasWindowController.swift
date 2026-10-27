@@ -30,6 +30,10 @@ final class CanvasWindowController {
                 self.apply(.page(zone: zone, page: page), to: id)
             }
         }
+        model.onResize = { [weak self] id, fraction in
+            self?.controller.setColumnWidth(of: id, to: fraction)
+            self?.reload()
+        }
         model.onDrop = { [weak self] id, drop in self?.apply(drop, to: id) }
     }
 

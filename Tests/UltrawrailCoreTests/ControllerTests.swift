@@ -268,4 +268,15 @@ final class ControllerCanvasTests: XCTestCase {
         XCTAssertEqual(windows.restored, [WindowID(2)])
         XCTAssertEqual(controller.overview()[0].pages[0].windows, [WindowID(1), WindowID(2)])
     }
+
+    func testSetColumnWidthResizesTheColumnOnAnyPage() {
+        let (controller, _) = makeController([1, 2])
+        controller.moveWindow(WindowID(2), toZone: 0, page: 1)
+        controller.setColumnWidth(of: WindowID(2), to: 0.8)
+        XCTAssertEqual(controller.overview()[0].pages[1].columns.first?.width, 0.8)
+        controller.setColumnWidth(of: WindowID(1), to: 5)
+        XCTAssertEqual(controller.overview()[0].pages[0].columns.first?.width, 1.0)
+        controller.setColumnWidth(of: WindowID(1), to: 0)
+        XCTAssertEqual(controller.overview()[0].pages[0].columns.first?.width, 0.1)
+    }
 }

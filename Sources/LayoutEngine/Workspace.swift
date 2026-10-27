@@ -124,6 +124,13 @@ public struct Workspace: Equatable, Sendable {
         }
     }
 
+    /// Sets the width of the column holding `id`, as a fraction of the viewport (clamped to 0.1...1).
+    public mutating func setWidth(ofColumnContaining id: WindowID, to fraction: Double) {
+        guard let c = columns.firstIndex(where: { $0.windows.contains(id) }) else { return }
+        columns[c].width = min(max(fraction, 0.1), 1.0)
+        columns[c].restoreWidth = nil
+    }
+
     /// Moves `id` into the column of `target`, below its windows. No-op when either is unknown or they are the same.
     public mutating func stack(_ id: WindowID, onto target: WindowID) {
         guard id != target, contains(id), contains(target) else { return }

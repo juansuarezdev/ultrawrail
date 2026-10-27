@@ -164,3 +164,12 @@ Pasos adicionales:
 2. Arrástrala a una página, a "＋ Nueva página" o sobre otra ventana (se apila): entra en la tira sin cambiar de página.
 3. Clic en una ventana de la bandeja la añade a la página actual.
 4. Las ventanas de apps excluidas también salen en la bandeja y se pueden añadir a mano.
+
+## Lienzo: redimensionar columnas
+
+1. En Ctrl+Alt+O, cada ventana tiene un asa vertical en el borde derecho. Arrastrarla ensancha o estrecha su columna (entre 10 % y 100 % de la zona) y la tira real se ajusta al soltar.
+2. En una columna apilada, cualquiera de sus ventanas redimensiona toda la columna.
+
+## Animación del foco
+
+1. Ctrl+Alt+←/→ desliza las columnas en unos 0,28 s con frenada suave, sin saltar a la posición final aunque haya apps lentas (Brave, iTerm).
