@@ -46,6 +46,8 @@ final class CanvasModel: ObservableObject {
     @Published var dropTarget: CanvasDrop?
     /// A column being resized with its edge handle: a window of it and the width change in world units.
     @Published var resizing: (id: WindowID, delta: CGFloat)?
+    /// A window's bottom edge being dragged: its id and the height change in world units.
+    @Published var resizingRow: (id: WindowID, delta: CGFloat)?
     @Published var hasCapturePermission = true
     @Published var focusedWindow: WindowID?
     @Published var unassigned: [WindowID] = []
@@ -55,6 +57,7 @@ final class CanvasModel: ObservableObject {
     var screenSize: CGSize = CGSize(width: 1440, height: 900)
     var onReveal: ((WindowID) -> Void)?
     var onResize: ((WindowID, Double) -> Void)?
+    var onResizeHeight: ((WindowID, Double) -> Void)?
     var onAssignToCurrent: ((WindowID) -> Void)?
     var onDrop: ((WindowID, CanvasDrop) -> Void)?
 
@@ -97,10 +100,14 @@ final class CanvasModel: ObservableObject {
         for column in columns {
             let width = CGFloat(column.width) * viewport.width
             let count = CGFloat(column.windows.count)
-            let height = (viewport.height - columnGap * (count - 1)) / count
+            let available = viewport.height - columnGap * (count - 1)
+            let fractions = column.rowFractions
+            var y: CGFloat = 0
             for (row, id) in column.windows.enumerated() {
-                windows.append(CanvasWindow(id: id, rect: CGRect(x: x, y: CGFloat(row) * (height + columnGap), width: width, height: height),
+                let height = available * CGFloat(fractions[row])
+                windows.append(CanvasWindow(id: id, rect: CGRect(x: x, y: y, width: width, height: height),
                                             columnSize: column.windows.count, viewportWidth: viewport.width))
+                y += height + columnGap
             }
             x += width + columnGap
         }
@@ -189,6 +196,53 @@ final class CanvasModel: ObservableObject {
         self.resizing = nil
         let width = window.rect.width + resizing.delta
         onResize?(window.id, Double(width / window.viewportWidth))
+    }
+
+    /// Windows of `id`'s column, top to bottom.
+    private func column(of id: WindowID) -> [CanvasWindow] {
+        guard let page = pages.first(where: { $0.windows.contains { $0.id == id } }),
+              let window = page.windows.first(where: { $0.id == id }) else { return [] }
+        return page.windows.filter { $0.rect.minX == window.rect.minX }.sorted { $0.rect.minY < $1.rect.minY }
+    }
+
+    func isLastRow(_ id: WindowID) -> Bool { column(of: id).last?.id == id }
+
+    /// Height change allowed for `id`'s bottom edge: both neighbours keep 10 % of the column.
+    private func clampedRowDelta(_ id: WindowID, _ delta: CGFloat) -> CGFloat {
+        let rows = column(of: id)
+        guard let index = rows.firstIndex(where: { $0.id == id }), index + 1 < rows.count else { return 0 }
+        let total = rows.reduce(0) { $0 + $1.rect.height }
+        let minimum = total * 0.1
+        return min(max(delta, minimum - rows[index].rect.height), rows[index + 1].rect.height - minimum)
+    }
+
+    /// The rect to draw for `window`, including live width and height resizes.
+    func liveRect(_ window: CanvasWindow) -> CGRect {
+        var rect = window.rect
+        if let resizing, sameColumn(resizing.id, window.id) {
+            rect.size.width = max(window.viewportWidth * 0.1, rect.width + resizing.delta)
+        }
+        if let resizingRow {
+            let rows = column(of: resizingRow.id)
+            let delta = clampedRowDelta(resizingRow.id, resizingRow.delta)
+            if let index = rows.firstIndex(where: { $0.id == resizingRow.id }), index + 1 < rows.count {
+                if window.id == rows[index].id { rect.size.height += delta }
+                if window.id == rows[index + 1].id { rect.origin.y += delta; rect.size.height -= delta }
+            }
+        }
+        return rect
+    }
+
+    func updateRowResize(_ id: WindowID, translation: CGFloat) {
+        resizingRow = (id, translation / scale)
+    }
+
+    func endRowResize(_ window: CanvasWindow) {
+        guard let resizingRow, resizingRow.id == window.id else { return }
+        self.resizingRow = nil
+        let delta = clampedRowDelta(window.id, resizingRow.delta)
+        let total = column(of: window.id).reduce(0) { $0 + $1.rect.height }
+        onResizeHeight?(window.id, Double((window.rect.height + delta) / total))
     }
 
     func endDrag(_ id: WindowID) {

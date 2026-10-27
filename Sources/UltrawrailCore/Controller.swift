@@ -696,6 +696,13 @@ public final class Controller {
         relayout()
     }
 
+    /// Gives `id` a share of its column's height, on any page.
+    public func setWindowHeight(of id: WindowID, to fraction: Double) {
+        guard let place = locate(id) else { return }
+        zones[place.zone].pages[place.page].setHeight(of: id, to: fraction)
+        relayout()
+    }
+
     /// Windows that exist and could be managed but are on no page (pending, left out, or minimized).
     public func unassignedWindows() -> [WindowID] {
         let managed = Set(allPageWindows)

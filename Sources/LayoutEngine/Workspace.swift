@@ -131,6 +131,24 @@ public struct Workspace: Equatable, Sendable {
         columns[c].restoreWidth = nil
     }
 
+    /// Gives window `id` a share of its column's height; the others keep their proportions in the rest.
+    /// Each window keeps at least 10 %. No-op for a window alone in its column.
+    public mutating func setHeight(of id: WindowID, to fraction: Double) {
+        guard let c = columns.firstIndex(where: { $0.windows.contains(id) }), columns[c].windows.count > 1,
+              let row = columns[c].windows.firstIndex(of: id) else { return }
+        let old = columns[c].rowFractions
+        let count = old.count
+        let share = min(max(fraction, 0.1), 1 - 0.1 * Double(count - 1))
+        let othersOld = 1 - old[row]
+        var result = old
+        for index in 0..<count where index != row {
+            result[index] = othersOld > 0 ? old[index] / othersOld * (1 - share) : (1 - share) / Double(count - 1)
+            result[index] = max(result[index], 0.1)
+        }
+        result[row] = share
+        columns[c].heights = result
+    }
+
     /// Moves `id` into the column of `target`, below its windows. No-op when either is unknown or they are the same.
     public mutating func stack(_ id: WindowID, onto target: WindowID) {
         guard id != target, contains(id), contains(target) else { return }

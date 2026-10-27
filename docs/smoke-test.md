@@ -173,3 +173,9 @@ Pasos adicionales:
 ## Animación del foco
 
 1. Ctrl+Alt+←/→ desliza las columnas en unos 0,28 s con frenada suave, sin saltar a la posición final aunque haya apps lentas (Brave, iTerm).
+
+## Lienzo: alto de las ventanas apiladas
+
+1. En Ctrl+Alt+O, las ventanas apiladas (menos la última de la columna) tienen un asa horizontal en el borde inferior. Arrastrarla reparte el alto con la ventana de abajo (mínimo 10 % cada una).
+2. Para un reparto 50 / (50 / 50): dos columnas al 50 %, y apila una segunda ventana en la de la derecha soltándola sobre la primera; luego deja las dos mitades iguales.
+3. Al añadir o quitar una ventana de la pila, el reparto vuelve a ser igual.

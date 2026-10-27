@@ -64,10 +64,13 @@ public enum Layout {
             let width = columnWidth(column, viewport: viewport, config: config)
             let x = stripX(of: index, in: ws, viewport: viewport, config: config) + shift
             let count = Double(column.windows.count)
-            let height = max((viewport.height - 2 * config.outerGap - (count - 1) * config.gap) / count, 1)
+            let available = viewport.height - 2 * config.outerGap - (count - 1) * config.gap
+            let fractions = column.rowFractions
+            var y = config.outerGap
             for (row, id) in column.windows.enumerated() {
-                let y = config.outerGap + Double(row) * (height + config.gap)
+                let height = max(available * fractions[row], 1)
                 result[id] = CGRect(x: x, y: y, width: width, height: height)
+                y += height + config.gap
             }
         }
         return result

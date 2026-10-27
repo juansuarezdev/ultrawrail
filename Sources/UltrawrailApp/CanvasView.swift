@@ -132,24 +132,21 @@ private struct WindowThumbView: View {
     private var isDropTarget: Bool { model.dropTarget == .stack(onto: window.id) }
     private var chip: (name: String, icon: NSImage?)? { model.chips[window.id] }
 
-    /// Width including a live resize of its column.
-    private var width: CGFloat {
-        guard let resizing = model.resizing, model.sameColumn(resizing.id, window.id) else { return window.rect.width }
-        return max(window.viewportWidth * 0.1, window.rect.width + resizing.delta)
-    }
+    private var rect: CGRect { model.liveRect(window) }
 
     var body: some View {
         content
-            .frame(width: width, height: window.rect.height)
+            .frame(width: rect.width, height: rect.height)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isDropTarget ? Color.accentColor : (model.focusedWindow == window.id ? .white.opacity(0.55) : .white.opacity(0.1)),
                               lineWidth: (isDropTarget ? 4 : 2) / max(model.scale, 0.2)))
             .overlay(alignment: .topLeading) { label }
             .overlay(alignment: .trailing) { resizeHandle }
+            .overlay(alignment: .bottom) { rowHandle }
             .shadow(color: .black.opacity(isDragging ? 0.6 : 0.35), radius: isDragging ? 40 : 18, y: 10)
-            .offset(x: window.rect.minX + (isDragging ? model.dragDelta.width : 0),
-                    y: window.rect.minY + (isDragging ? model.dragDelta.height : 0))
+            .offset(x: rect.minX + (isDragging ? model.dragDelta.width : 0),
+                    y: rect.minY + (isDragging ? model.dragDelta.height : 0))
             .zIndex(isDragging ? 100 : 1)
             .onTapGesture { model.onReveal?(window.id) }
             .gesture(DragGesture(minimumDistance: 6, coordinateSpace: .named("canvas"))
@@ -160,7 +157,7 @@ private struct WindowThumbView: View {
     private var resizeHandle: some View {
         Capsule()
             .fill(.white.opacity(model.resizing?.id == window.id ? 0.9 : 0.35))
-            .frame(width: 6 / model.scale, height: min(window.rect.height * 0.3, 90 / model.scale))
+            .frame(width: 6 / model.scale, height: min(rect.height * 0.3, 90 / model.scale))
             .padding(.trailing, 8 / model.scale)
             .frame(width: 26 / model.scale)
             .contentShape(Rectangle())
@@ -168,6 +165,21 @@ private struct WindowThumbView: View {
             .highPriorityGesture(DragGesture(minimumDistance: 1, coordinateSpace: .named("canvas"))
                 .onChanged { model.updateResize(window.id, translation: $0.translation.width) }
                 .onEnded { _ in model.endResize(window) })
+    }
+
+    @ViewBuilder private var rowHandle: some View {
+        if !model.isLastRow(window.id) {
+            Capsule()
+                .fill(.white.opacity(model.resizingRow?.id == window.id ? 0.9 : 0.35))
+                .frame(width: min(rect.width * 0.3, 90 / model.scale), height: 6 / model.scale)
+                .padding(.bottom, 8 / model.scale)
+                .frame(height: 26 / model.scale)
+                .contentShape(Rectangle())
+                .onHover { inside in if inside { NSCursor.resizeUpDown.push() } else { NSCursor.pop() } }
+                .highPriorityGesture(DragGesture(minimumDistance: 1, coordinateSpace: .named("canvas"))
+                    .onChanged { model.updateRowResize(window.id, translation: $0.translation.height) }
+                    .onEnded { _ in model.endRowResize(window) })
+        }
     }
 
     @ViewBuilder private var content: some View {

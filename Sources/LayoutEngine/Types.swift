@@ -42,10 +42,24 @@ public struct Column: Equatable, Sendable {
     public var windows: [WindowID]
     public var width: Double
     public var restoreWidth: Double?
+    /// Share of the column height of each window, top to bottom. Ignored (equal split) unless it
+    /// has one positive entry per window, so adding or removing a window resets the split.
+    public var heights: [Double] = []
 
     public init(windows: [WindowID], width: Double = WidthPreset.defaultWidth, restoreWidth: Double? = nil) {
         self.windows = windows
         self.width = width
         self.restoreWidth = restoreWidth
+    }
+
+    /// Normalized height share of each window; they add up to 1.
+    public var rowFractions: [Double] {
+        let count = windows.count
+        guard count > 0 else { return [] }
+        guard heights.count == count, heights.allSatisfy({ $0 > 0 }) else {
+            return Array(repeating: 1 / Double(count), count: count)
+        }
+        let total = heights.reduce(0, +)
+        return heights.map { $0 / total }
     }
 }
