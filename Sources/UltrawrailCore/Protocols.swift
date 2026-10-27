@@ -42,6 +42,12 @@ public protocol WindowService: AnyObject {
     func focus(_ id: WindowID)
     func isAlive(_ id: WindowID) -> Bool
     func describe(_ id: WindowID) -> WindowDescription?
+    /// The system window number, used to capture a thumbnail.
+    func windowNumber(for id: WindowID) -> UInt32?
+}
+
+public extension WindowService {
+    func windowNumber(for id: WindowID) -> UInt32? { nil }
 }
 
 @MainActor

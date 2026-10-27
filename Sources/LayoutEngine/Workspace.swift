@@ -117,11 +117,21 @@ public struct Workspace: Equatable, Sendable {
             moveColumn(by: -1)
         case .moveColumnRight:
             moveColumn(by: 1)
-        case .centerColumn, .showTemplates, .adoptWindow,
+        case .centerColumn, .showTemplates, .showOverview, .adoptWindow,
              .previousPage, .nextPage, .moveWindowToPreviousPage, .moveWindowToNextPage,
              .focusZoneLeft, .focusZoneRight, .moveWindowToZoneLeft, .moveWindowToZoneRight:
             break
         }
+    }
+
+    /// Moves `id` into the column of `target`, below its windows. No-op when either is unknown or they are the same.
+    public mutating func stack(_ id: WindowID, onto target: WindowID) {
+        guard id != target, contains(id), contains(target) else { return }
+        removeWindow(id)
+        guard let column = columns.firstIndex(where: { $0.windows.contains(target) }) else { return }
+        columns[column].windows.append(id)
+        focusedColumn = column
+        focusedRow = columns[column].windows.count - 1
     }
 
     private mutating func stackLeft() {

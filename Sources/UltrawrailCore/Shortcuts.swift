@@ -118,6 +118,7 @@ public enum ShortcutCatalog {
         ShortcutBinding(id: "moveColumnRight.arrow", title: "Mover columna a la derecha", command: .moveColumnRight, defaultCombo: combo(right, shift: true)),
         ShortcutBinding(id: "adoptWindow", title: "Añadir ventana nueva a la tira", command: .adoptWindow, defaultCombo: combo(0)),
         ShortcutBinding(id: "showTemplates", title: "Panel de plantillas", command: .showTemplates, defaultCombo: combo(17)),
+        ShortcutBinding(id: "showOverview", title: "Lienzo de ventanas", command: .showOverview, defaultCombo: combo(31)),
         ShortcutBinding(id: "previousPage", title: "Página anterior", command: .previousPage, defaultCombo: page(left)),
         ShortcutBinding(id: "nextPage", title: "Página siguiente", command: .nextPage, defaultCombo: page(right)),
         ShortcutBinding(id: "moveWindowToPreviousPage", title: "Mover ventana a la página anterior", command: .moveWindowToPreviousPage, defaultCombo: page(left, shift: true)),

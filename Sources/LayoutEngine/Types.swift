@@ -27,7 +27,7 @@ public enum Command: Equatable, Sendable {
     case cycleWidth, toggleFullWidth, centerColumn
     case stackLeft, unstack
     case moveColumnLeft, moveColumnRight
-    case showTemplates
+    case showTemplates, showOverview
     case adoptWindow
     case previousPage, nextPage, moveWindowToPreviousPage, moveWindowToNextPage
     case focusZoneLeft, focusZoneRight, moveWindowToZoneLeft, moveWindowToZoneRight

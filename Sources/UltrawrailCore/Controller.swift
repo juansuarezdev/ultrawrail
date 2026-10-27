@@ -26,20 +26,25 @@ public struct WorkspaceSnapshot: Equatable, Sendable {
 public struct PageOverview: Equatable, Sendable {
     public let windows: [WindowID]
     public let isCurrent: Bool
+    public let columns: [Column]
 
-    public init(windows: [WindowID], isCurrent: Bool) {
+    public init(windows: [WindowID], isCurrent: Bool, columns: [Column] = []) {
         self.windows = windows
         self.isCurrent = isCurrent
+        self.columns = columns
     }
 }
 
 public struct ZoneOverview: Equatable, Sendable {
     public let pages: [PageOverview]
     public let isFocused: Bool
+    /// The area of the display this zone covers, top-left origin.
+    public let viewport: CGRect
 
-    public init(pages: [PageOverview], isFocused: Bool) {
+    public init(pages: [PageOverview], isFocused: Bool, viewport: CGRect = .zero) {
         self.pages = pages
         self.isFocused = isFocused
+        self.viewport = viewport
     }
 }
 
@@ -93,7 +98,9 @@ public final class Controller {
     }
     public var pendingCount: Int { pending.count }
     public var onShowTemplates: (() -> Void)?
+    public var onShowOverview: (() -> Void)?
     public var managedWindows: [WindowID] { workspace.allWindows }
+    public var focusedWindowID: WindowID? { workspace.focusedWindow }
     private var allPageWindows: [WindowID] { zones.flatMap { $0.pages.flatMap(\.allWindows) } }
 
     private let windows: WindowService
@@ -191,6 +198,7 @@ public final class Controller {
     }
 
     public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
+    public func windowNumber(for id: WindowID) -> UInt32? { windows.windowNumber(for: id) }
 
     /// Gives keyboard focus back to the focused window (used when a panel closes without changes).
     public func refocus() {
@@ -207,6 +215,7 @@ public final class Controller {
 
     public func handle(_ command: Command) {
         if command == .showTemplates { onShowTemplates?(); return }
+        if command == .showOverview { onShowOverview?(); return }
         if command == .adoptWindow { adoptPending(); return }
         switch command {
         case .nextPage:
@@ -630,10 +639,12 @@ public final class Controller {
 
     /// Every zone and page with its windows in column order.
     public func overview() -> [ZoneOverview] {
-        zones.enumerated().map { index, zone in
+        let full = windows.usableFrame()
+        return zones.enumerated().map { index, zone in
             ZoneOverview(pages: zone.pages.enumerated().map { page, workspace in
-                PageOverview(windows: workspace.allWindows, isCurrent: page == zone.currentPage)
-            }, isFocused: index == focusedZone)
+                PageOverview(windows: workspace.allWindows, isCurrent: page == zone.currentPage,
+                             columns: workspace.columns)
+            }, isFocused: index == focusedZone, viewport: zoneViewport(index, in: full))
         }
     }
 
@@ -663,6 +674,30 @@ public final class Controller {
         needsClamp = true
         relayout(force: true)
         if wasFocused { focusWindow(id) }
+    }
+
+    /// Switches to the zone and page holding `id` and focuses it.
+    public func reveal(_ id: WindowID) {
+        guard let place = locate(id) else { return }
+        focusedZone = place.zone
+        zones[place.zone].currentPage = place.page
+        zones[place.zone].pages[place.page].focus(window: id)
+        suppressFocusEcho()
+        needsClamp = true
+        relayout(force: true)
+        focusWindow(id)
+    }
+
+    /// Puts `id` in the column of `target`, first moving it to the target's page when needed.
+    public func stack(_ id: WindowID, onto target: WindowID) {
+        guard id != target, let place = locate(target), let source = locate(id) else { return }
+        if source.zone != place.zone || source.page != place.page {
+            moveWindow(id, toZone: place.zone, page: place.page)
+        }
+        guard let now = locate(target) else { return }
+        zones[now.zone].pages[now.page].stack(id, onto: target)
+        needsClamp = true
+        relayout(force: true)
     }
 
     private func trimTrailingPages(of zone: Int) {

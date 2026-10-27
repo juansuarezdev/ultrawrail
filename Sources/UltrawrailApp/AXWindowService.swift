@@ -3,6 +3,9 @@ import ApplicationServices
 import LayoutEngine
 import UltrawrailCore
 
+@_silgen_name("_AXUIElementGetWindow")
+private func _AXUIElementGetWindow(_ element: AXUIElement, _ windowID: UnsafeMutablePointer<CGWindowID>) -> AXError
+
 private func axCallback(
     _ observer: AXObserver,
     _ element: AXUIElement,
@@ -92,6 +95,12 @@ final class AXWindowService: WindowService {
         let app = NSRunningApplication(processIdentifier: entry.pid)
         return WindowDescription(appName: app?.localizedName ?? "App", pid: Int32(entry.pid),
                                  bundleID: app?.bundleIdentifier)
+    }
+
+    func windowNumber(for id: WindowID) -> UInt32? {
+        guard let entry = entries[id] else { return nil }
+        var number = CGWindowID(0)
+        return _AXUIElementGetWindow(entry.element, &number) == .success && number != 0 ? number : nil
     }
 
     func isAlive(_ id: WindowID) -> Bool {

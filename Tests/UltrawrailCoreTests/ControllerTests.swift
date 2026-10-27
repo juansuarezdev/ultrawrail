@@ -182,3 +182,46 @@ final class ControllerTests: XCTestCase {
         XCTAssertEqual(windows.setFrameCalls.count, before + 3)
     }
 }
+
+@MainActor
+final class ControllerCanvasTests: XCTestCase {
+    func makeController(_ ids: [Int]) -> (Controller, FakeWindows) {
+        let windows = FakeWindows()
+        for id in ids { windows.add(id, manageable: true) }
+        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: LayoutConfig(gap: 10, outerGap: 10))
+        controller.start()
+        return (controller, windows)
+    }
+
+    func testOverviewExposesColumnsAndViewport() {
+        let (controller, _) = makeController([1, 2])
+        let zone = controller.overview()[0]
+        XCTAssertEqual(zone.pages[0].columns.map(\.windows), [[WindowID(1)], [WindowID(2)]])
+        XCTAssertFalse(zone.viewport.isEmpty)
+    }
+
+    func testStackOntoSamePageMergesColumns() {
+        let (controller, _) = makeController([1, 2, 3])
+        controller.stack(WindowID(3), onto: WindowID(1))
+        XCTAssertEqual(controller.overview()[0].pages[0].columns.map(\.windows),
+                       [[WindowID(1), WindowID(3)], [WindowID(2)]])
+    }
+
+    func testStackOntoWindowOfAnotherPageMovesIt() {
+        let (controller, _) = makeController([1, 2])
+        controller.moveWindow(WindowID(2), toZone: 0, page: 1)
+        controller.stack(WindowID(1), onto: WindowID(2))
+        let pages = controller.overview()[0].pages
+        XCTAssertEqual(pages.count, 2)
+        XCTAssertEqual(pages.last?.columns.map(\.windows), [[WindowID(2), WindowID(1)]])
+    }
+
+    func testRevealSwitchesPageAndFocuses() {
+        let (controller, windows) = makeController([1, 2])
+        controller.moveWindow(WindowID(2), toZone: 0, page: 1)
+        controller.reveal(WindowID(2))
+        let pages = controller.overview()[0].pages
+        XCTAssertTrue(pages[1].isCurrent)
+        XCTAssertEqual(windows.focusCalls.last, WindowID(2))
+    }
+}

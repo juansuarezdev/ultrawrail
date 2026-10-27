@@ -149,3 +149,11 @@ Pasos adicionales:
 4. El atajo nuevo funciona al instante y el antiguo deja de funcionar, sin reiniciar.
 5. Cerrar y reabrir Ultrawrail conserva los atajos cambiados; "Restablecer todos" vuelve a los de serie.
 6. El submenú "Atajos de teclado" de la barra de menús muestra los atajos en vigor.
+
+## Lienzo (Ctrl+Alt+O)
+
+1. Ctrl+Alt+O abre un mapa a pantalla completa con todas las zonas y páginas; cada ventana sale como miniatura con icono y nombre. Esc o el mismo atajo lo cierran.
+2. La primera vez pide Grabación de pantalla. Concedido (y reiniciada la app), las miniaturas son en vivo; sin permiso, tarjetas con icono y un aviso con enlace a Ajustes.
+3. Barra inferior izquierda: − / porcentaje / + y "ver todo". La rueda o dos dedos desplazan; Cmd o Ctrl con la rueda, o pellizcar, hacen zoom; arrastrar el fondo desplaza.
+4. Arrastrar una ventana a otra página la mueve; a la tarjeta "＋ Nueva página" crea una; soltarla sobre otra ventana las apila (etiqueta "· 2 ventanas").
+5. Clic en una ventana cierra el lienzo y salta a su zona y página con foco.

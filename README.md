@@ -29,6 +29,7 @@ On a 34" or 49" ultrawide, tiling everything into fixed halves wastes the width 
 - **Pages.** Several strips per display; switch pages like virtual desktops, and move windows between them.
 - **Zones.** Split a display into vertical zones, each with its own pages.
 - **Templates.** A visual panel (`Ctrl+Alt+T`) to reflow the current page into a layout by dragging windows into slots. Built-in templates, plus your own from the editor in Settings.
+- **Canvas.** `Ctrl+Alt+O` zooms out to a map of every zone, page and window with live thumbnails. Pan, zoom, drag a window to another page, drop it on another window to stack them, click one to jump to it. Live thumbnails need the Screen Recording permission; without it you get icon cards.
 - **Excluded apps.** Keep chosen apps out of the strip.
 - **Menu-bar app.** No Dock icon. Settings for motion, gaps, widths, templates, pages and shortcuts.
 - **Keyboard first.** Global hotkeys for everything, with a legend for Windows or Mac keyboards.
@@ -50,6 +51,7 @@ Written for a Windows keyboard on a Mac (`Win` = `⌘`, `Alt` = `⌥`, `Ctrl` = 
 | `Ctrl+Alt+[` / `]` | Stack into / pull out of the left column |
 | `Ctrl+Alt+A` | Adopt the focused window into the strip |
 | `Ctrl+Alt+T` | Template panel |
+| `Ctrl+Alt+O` | Canvas of all windows |
 | `Win+Alt+←/→` | Previous / next page |
 | `Win+Alt+Shift+←/→` | Move the window to the previous / next page |
 | `Ctrl+Alt+Win+←/→` | Previous / next zone |

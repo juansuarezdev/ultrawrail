@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var settingsWindow: SettingsWindowController?
     private var controller: Controller?
     private var templatePanel: TemplatePanelController?
+    private var canvas: CanvasWindowController?
     private var lastSnapshot: WorkspaceSnapshot?
     private var statusLineItem: NSMenuItem?
     private var pageLineItem: NSMenuItem?
@@ -164,6 +165,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             templates: { [weak self] in self?.model.allTemplates ?? Template.builtIn }
         )
         controller.onShowTemplates = { [weak self] in self?.templatePanel?.toggle() }
+        canvas = CanvasWindowController(controller: controller)
+        controller.onShowOverview = { [weak self] in self?.canvas?.toggle() }
         controller.start()
         self.controller = controller
 
