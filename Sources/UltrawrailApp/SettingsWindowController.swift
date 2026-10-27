@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class SettingsWindowController: NSObject, NSWindowDelegate {
+final class SettingsWindowController: NSObject {
     private let model: SettingsModel
     private var window: NSWindow?
 
@@ -18,16 +18,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             window.title = "Ajustes de Ultrawrail"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
-            window.delegate = self
             window.center()
             self.window = window
         }
-        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
     }
 }
