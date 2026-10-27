@@ -3,7 +3,8 @@ import CoreGraphics
 public enum Easing {
     public static func easeOut(_ t: Double) -> Double {
         let clamped = min(max(t, 0), 1)
-        return 1 - (1 - clamped) * (1 - clamped) * (1 - clamped)
+        let inverse = 1 - clamped
+        return 1 - inverse * inverse * inverse * inverse
     }
 }
 

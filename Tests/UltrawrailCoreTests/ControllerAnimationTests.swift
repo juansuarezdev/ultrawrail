@@ -74,24 +74,24 @@ final class ControllerAnimationTests: XCTestCase {
         XCTAssertTrue(clock.isRunning)
     }
 
-    func testAtMostFourWindowsAnimateAndTheRestJump() {
-        let (controller, windows) = makeController([1, 2, 3, 4, 5, 6], speed: .off)
-        for id in 1...6 {
+    func testOnlyWindowsTouchingTheScreenAnimateAndTheRestJump() {
+        let (controller, windows) = makeController(Array(1...12), speed: .off)
+        for id in 1...12 {
             controller.handle(.focused(WindowID(id)))
             for _ in 0..<3 { controller.handle(.cycleWidth) }
         }
-        controller.handle(.focused(6))
+        controller.handle(.focused(12))
         controller.motion = MotionSettings(speed: .normal)
 
         let baseline = windows.setFrameCalls.count
         controller.handle(.focused(1))
         let immediate = Set(windows.setFrameCalls.dropFirst(baseline).map(\.id.rawValue))
-        XCTAssertEqual(immediate, [1, 6])
+        XCTAssertEqual(immediate, [1, 5, 6, 7, 8])
 
         let afterJump = windows.setFrameCalls.count
         clock.fire(advancingBy: 0.09)
         let animated = Set(windows.setFrameCalls.dropFirst(afterJump).map(\.id.rawValue))
-        XCTAssertEqual(animated, [2, 3, 4, 5])
+        XCTAssertEqual(animated, [2, 3, 4, 9, 10, 11, 12])
     }
 
     func testSlowFrameSnapsToTarget() {

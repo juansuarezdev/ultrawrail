@@ -59,7 +59,7 @@ final class AnimatorTests: XCTestCase {
         var emitted: [(frames: [WindowID: CGRect], finished: Bool)] = []
         animator.onFrame = { frames, finished in
             emitted.append((frames, finished))
-            clock.time += 0.05
+            clock.time += 0.06
         }
         animator.start(Tween(from: [1: start], to: [1: end], duration: 0.2))
         clock.fire(advancingBy: 0.01)
@@ -117,7 +117,7 @@ final class AnimatorTests: XCTestCase {
             calls += 1
             emitted.append(frames)
             if calls == 1 {
-                clock.time += 0.05
+                clock.time += 0.06
             } else if calls == 2 {
                 animator.cancel()
                 animator.start(Tween(from: [2: self.start], to: [2: self.end], duration: 0.2))
@@ -141,7 +141,7 @@ final class AnimatorTests: XCTestCase {
             emitted.append(frames)
             if emitted.count == 1 {
                 animator.remove(2)
-                clock.time += 0.05
+                clock.time += 0.06
             }
         }
         animator.start(Tween(from: [1: start, 2: start], to: [1: end, 2: end], duration: 0.2))
@@ -153,17 +153,17 @@ final class AnimatorTests: XCTestCase {
     }
 
     func testMotionSettingsDurations() {
-        XCTAssertEqual(MotionSettings(speed: .normal).duration(reduceMotion: false), 0.18)
-        XCTAssertEqual(MotionSettings(speed: .fast).duration(reduceMotion: false), 0.12)
+        XCTAssertEqual(MotionSettings(speed: .normal).duration(reduceMotion: false), 0.28)
+        XCTAssertEqual(MotionSettings(speed: .fast).duration(reduceMotion: false), 0.16)
         XCTAssertEqual(MotionSettings(speed: .off).duration(reduceMotion: false), 0)
         XCTAssertEqual(MotionSettings(speed: .normal).duration(reduceMotion: true), 0)
-        XCTAssertEqual(MotionSettings(speed: .normal, respectReduceMotion: false).duration(reduceMotion: true), 0.18)
+        XCTAssertEqual(MotionSettings(speed: .normal, respectReduceMotion: false).duration(reduceMotion: true), 0.28)
     }
 
     func testPreviewAnimatesEvenWhenWindowAnimationIsOff() {
-        XCTAssertEqual(MotionSettings(speed: .off).previewDuration(reduceMotion: false), 0.18)
-        XCTAssertEqual(MotionSettings(speed: .fast).previewDuration(reduceMotion: false), 0.12)
+        XCTAssertEqual(MotionSettings(speed: .off).previewDuration(reduceMotion: false), 0.28)
+        XCTAssertEqual(MotionSettings(speed: .fast).previewDuration(reduceMotion: false), 0.16)
         XCTAssertEqual(MotionSettings(speed: .off).previewDuration(reduceMotion: true), 0)
-        XCTAssertEqual(MotionSettings(speed: .off, respectReduceMotion: false).previewDuration(reduceMotion: true), 0.18)
+        XCTAssertEqual(MotionSettings(speed: .off, respectReduceMotion: false).previewDuration(reduceMotion: true), 0.28)
     }
 }

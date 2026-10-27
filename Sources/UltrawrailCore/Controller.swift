@@ -138,7 +138,7 @@ public final class Controller {
     private var pendingFocus: WindowID?
     private var lastSnapshot: WorkspaceSnapshot?
     private static let maxFailures = 3
-    private static let maxAnimated = 4
+    private static let maxAnimated = 8
 
     public init(
         windows: WindowService,

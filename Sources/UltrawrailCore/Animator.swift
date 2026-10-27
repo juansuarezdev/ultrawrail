@@ -20,7 +20,7 @@ public final class Animator {
     private var startTime = 0.0
     private var generation = 0
 
-    public init(clock: FrameClock, now: @escaping () -> Double, slowFrameLimit: Double = 0.033) {
+    public init(clock: FrameClock, now: @escaping () -> Double, slowFrameLimit: Double = 0.05) {
         self.clock = clock
         self.now = now
         self.slowFrameLimit = slowFrameLimit

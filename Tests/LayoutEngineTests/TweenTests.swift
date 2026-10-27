@@ -23,7 +23,7 @@ final class TweenTests: XCTestCase {
     func testFramesInterpolateAndLandExactlyOnTarget() {
         let tween = Tween(from: [1: start], to: [1: end], duration: 0.2)
         XCTAssertEqual(tween.frames(at: 0)[1], start)
-        XCTAssertEqual(tween.frames(at: 0.1)[1]!.minX, 87.5, accuracy: 0.0001)
+        XCTAssertEqual(tween.frames(at: 0.1)[1]!.minX, 93.75, accuracy: 0.0001)
         XCTAssertEqual(tween.frames(at: 0.2)[1], end)
         XCTAssertEqual(tween.frames(at: 5)[1], end)
         XCTAssertFalse(tween.isFinished(at: 0.19))

@@ -5,8 +5,8 @@ public enum MotionSpeed: String, CaseIterable, Sendable {
 
     public var duration: Double {
         switch self {
-        case .fast: 0.12
-        case .normal: 0.18
+        case .fast: 0.16
+        case .normal: 0.28
         case .off: 0
         }
     }
