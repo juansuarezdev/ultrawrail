@@ -44,9 +44,14 @@ public protocol WindowService: AnyObject {
     func describe(_ id: WindowID) -> WindowDescription?
     /// The system window number, used to capture a thumbnail.
     func windowNumber(for id: WindowID) -> UInt32?
+    func isMinimized(_ id: WindowID) -> Bool
+    func restore(_ id: WindowID)
 }
 
 public extension WindowService {
+    /// True for windows hidden in the Dock; they can be brought back with `restore`.
+    func isMinimized(_ id: WindowID) -> Bool { false }
+    func restore(_ id: WindowID) {}
     func windowNumber(for id: WindowID) -> UInt32? { nil }
 }
 

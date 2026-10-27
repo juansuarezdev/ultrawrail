@@ -97,6 +97,16 @@ final class AXWindowService: WindowService {
                                  bundleID: app?.bundleIdentifier)
     }
 
+    func isMinimized(_ id: WindowID) -> Bool {
+        guard let entry = entries[id] else { return false }
+        return attribute(entry.element, kAXMinimizedAttribute) as Bool? == true
+    }
+
+    func restore(_ id: WindowID) {
+        guard let entry = entries[id] else { return }
+        AXUIElementSetAttributeValue(entry.element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+    }
+
     func windowNumber(for id: WindowID) -> UInt32? {
         guard let entry = entries[id] else { return nil }
         var number = CGWindowID(0)

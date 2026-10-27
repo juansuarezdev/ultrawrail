@@ -688,10 +688,12 @@ public final class Controller {
         focusWindow(id)
     }
 
-    /// Windows that exist and could be managed but are on no page (pending, or left out).
+    /// Windows that exist and could be managed but are on no page (pending, left out, or minimized).
     public func unassignedWindows() -> [WindowID] {
         let managed = Set(allPageWindows)
-        return windows.allWindows().filter { $0.isManageable && !managed.contains($0.id) && windows.isAlive($0.id) }.map(\.id)
+        return windows.allWindows().filter {
+            !managed.contains($0.id) && ($0.isManageable || windows.isMinimized($0.id)) && windows.isAlive($0.id)
+        }.map(\.id)
     }
 
     /// Adds an unassigned window to a zone and page without switching to it. A page index equal to
@@ -710,6 +712,7 @@ public final class Controller {
         zones[zone].pages[page].addWindow(id)
         needsClamp = true
         relayout(force: true)
+        if windows.isMinimized(id) { windows.restore(id) }
     }
 
     /// Puts `id` in the column of `target`, first moving it to the target's page when needed.

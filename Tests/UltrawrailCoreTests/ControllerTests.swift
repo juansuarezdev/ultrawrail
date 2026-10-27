@@ -32,6 +32,10 @@ final class FakeWindows: WindowService {
         focusCalls.append(id)
         if echoFocus { onEvent?(.focused(id)) }
     }
+    var minimized: Set<WindowID> = []
+    private(set) var restored: [WindowID] = []
+    func isMinimized(_ id: WindowID) -> Bool { minimized.contains(id) }
+    func restore(_ id: WindowID) { minimized.remove(id); restored.append(id) }
     func isAlive(_ id: WindowID) -> Bool { alive.contains(id) }
     var descriptions: [WindowID: WindowDescription] = [:]
     func describe(_ id: WindowID) -> WindowDescription? { descriptions[id] }
@@ -250,5 +254,18 @@ final class ControllerCanvasTests: XCTestCase {
         windows.onEvent?(.opened(WindowInfo(id: WindowID(2), isManageable: true)))
         controller.stack(WindowID(2), onto: WindowID(1))
         XCTAssertEqual(controller.overview()[0].pages[0].columns.map(\.windows), [[WindowID(1), WindowID(2)]])
+    }
+
+    func testMinimizedWindowIsUnassignedAndRestoredOnAssign() {
+        let windows = FakeWindows()
+        windows.add(1)
+        windows.add(2, manageable: false)
+        windows.minimized = [WindowID(2)]
+        let controller = Controller(windows: windows, hotkeys: FakeHotkeys(), config: LayoutConfig(gap: 10, outerGap: 10))
+        controller.start()
+        XCTAssertEqual(controller.unassignedWindows(), [WindowID(2)])
+        controller.assign(WindowID(2), toZone: 0, page: 0)
+        XCTAssertEqual(windows.restored, [WindowID(2)])
+        XCTAssertEqual(controller.overview()[0].pages[0].windows, [WindowID(1), WindowID(2)])
     }
 }
