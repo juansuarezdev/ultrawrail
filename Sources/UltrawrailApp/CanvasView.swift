@@ -240,7 +240,7 @@ private struct UnassignedTray: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 16).fill(.black.opacity(0.55)))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.14)))
-        .frame(maxWidth: 900)
+        .frame(maxWidth: 1700)
         .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
     }
 }

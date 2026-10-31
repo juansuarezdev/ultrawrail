@@ -47,6 +47,22 @@ final class AXWindowService: WindowService {
             MainActor.assumeIsolated { self?.forget(pid: app.processIdentifier) }
         }
         for app in NSWorkspace.shared.runningApplications { observe(app) }
+        // Heavy apps (browsers) can miss the 0.3 s messaging timeout at launch: look again shortly after.
+        for delay in [2.0, 6.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                MainActor.assumeIsolated { self?.rescan() }
+            }
+        }
+    }
+
+    func rescan() {
+        for pid in observers.keys {
+            let appElement = AXUIElementCreateApplication(pid)
+            AXUIElementSetMessagingTimeout(appElement, 0.3)
+            for window in windows(of: appElement) where id(of: window) == nil {
+                _ = register(window, pid: pid, emit: true)
+            }
+        }
     }
 
     func allWindows() -> [WindowInfo] {

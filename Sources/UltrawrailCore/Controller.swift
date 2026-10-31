@@ -198,6 +198,8 @@ public final class Controller {
     }
 
     public func describe(_ id: WindowID) -> WindowDescription? { windows.describe(id) }
+    /// Picks up windows of slow apps that were missed at launch.
+    public func rescanWindows() { windows.rescan() }
     public func windowNumber(for id: WindowID) -> UInt32? { windows.windowNumber(for: id) }
 
     /// Gives keyboard focus back to the focused window (used when a panel closes without changes).

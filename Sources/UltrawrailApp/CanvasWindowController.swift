@@ -48,6 +48,7 @@ final class CanvasWindowController {
     private func open() {
         guard !controller.managedWindows.isEmpty || !controller.unassignedWindows().isEmpty, let screen = NSScreen.main else { return }
         model.screenSize = screen.frame.size
+        controller.rescanWindows()
         reload()
         model.fit()
         model.thumbnails = [:]
